@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<link rel="stylesheet" href="css/styles.css?v=1.0">
+<script src="scripts/angular.min.js"></script>
+<body>
+<div ng-app="myApp" ng-controller="myCtrl">
+  <h1>
+    <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins">Fusion aléatoire de chemins</a>
+  </h1>
+  <div class="bordure">
+    <div 
+      ng-repeat="ligne in labyrinthe.cellules"
+      class="line">
+      <div 
+        ng-repeat="cellule in ligne"
+        ng-class="labyrinthe.getCssClass(cellule)">{{cellule.zoneId}}</div>
+    </div>
+  </div>
+  <br/><br/>
+  <h1>
+    <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Exploration_exhaustive">Exploration exhaustive</a>
+  </h1>
+  <div class="bordure">
+    <div 
+      ng-repeat="ligne in labyrinthe2.cellules"
+      class="line">
+      <div 
+        ng-repeat="cellule in ligne"
+        ng-class="labyrinthe2.getCssClass(cellule)">{{cellule.processed}}</div>
+    </div>
+  </div>
+  <br/><br/><br/><br/><br/><br/><br/><br/>
+</div>
+<script type="text/javascript">
+  
+var app = angular.module('myApp', []);
+
+// https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins
+app.service('comprehensiveExploration', function() {
+  this._initCellules = function(labyrinthe) {
+    for (var j = 0; j < labyrinthe.height; j++) {
+      var ligne = labyrinthe.cellules[j];
+      // console.log('ligne: ' + JSON.stringify(ligne));
+      for (var i = 0; i < labyrinthe.width; i++) {
+        var cellule = ligne[i];
+        cellule.processed = false;
+        // console.log('zones[' + id + ']: ' + JSON.stringify(zones[id]));
+      }
+    }
+  }
+
+  this._getPossibleWallsToRemove = function(cellule, labyrinthe) {
+    var possibleWallsToRemove = [];
+    // S'il y une cellule à gauche
+    if (cellule.x > 0
+        // Et qu'il y un mur
+        && (cellule.value & 0x4) == 0x4
+        // Et que la cellule de gauche n'a pas été traitée
+        && labyrinthe.cellules[cellule.y][cellule.x - 1].processed == false) {
+      possibleWallsToRemove.push({
+        orientation: 0x4,
+        opposite: 0x1,
+        nextCellule: labyrinthe.cellules[cellule.y][cellule.x - 1]
+      });
+    }
+    // S'il y une cellule à droite
+    if (cellule.x < (labyrinthe.width - 1)
+        // Et qu'il y un mur
+        && (cellule.value & 0x1) == 0x1
+        // Et que la cellule de droite n'a pas été traitée
+        && labyrinthe.cellules[cellule.y][cellule.x + 1].processed == false) {
+      possibleWallsToRemove.push({
+        orientation: 0x1,
+        opposite: 0x4,
+        nextCellule: labyrinthe.cellules[cellule.y][cellule.x + 1]
+      });
+    }
+    // S'il y une cellule en haut
+    if (cellule.y > 0
+        // Et qu'il y un mur
+        && (cellule.value & 0x2) == 0x2
+        // Et que la cellule en haut n'a pas été traitée
+        && labyrinthe.cellules[cellule.y - 1][cellule.x].processed == false) {
+      possibleWallsToRemove.push({
+        orientation: 0x2,
+        opposite: 0x8,
+        nextCellule: labyrinthe.cellules[cellule.y - 1][cellule.x]
+      });
+    }
+    // S'il y une cellule en bas
+    if (cellule.y < (labyrinthe.height - 1)
+        // Et qu'il y un mur
+        && (cellule.value & 0x8) == 0x8
+        // Et que la cellule en bas n'a pas été traitée
+        && labyrinthe.cellules[cellule.y + 1][cellule.x].processed == false) {
+      possibleWallsToRemove.push({
+        orientation: 0x8,
+        opposite: 0x2,
+        nextCellule: labyrinthe.cellules[cellule.y + 1][cellule.x]
+      });
+    }
+    return possibleWallsToRemove;
+  }
+
+  this._breakWall = function(cellule, wallToRemove, labyrinthe) {
+    // var nextCellule = labyrinthe.cellules[wallToRemove.celluleY][wallToRemove.celluleX];
+    // console.log('wallToRemove: ' + JSON.stringify(wallToRemove));
+    // console.log('before: ' + cellule.value + ' ' + wallToRemove.nextCellule.value);
+    var mask = 0xF ^ wallToRemove.orientation;
+    cellule.value = cellule.value & mask;
+    var oppositeMask = 0xF ^ wallToRemove.opposite;
+    wallToRemove.nextCellule.value = wallToRemove.nextCellule.value & oppositeMask;
+    // console.log('after: ' + cellule.value + ' ' + wallToRemove.nextCellule.value);
+  } 
+
+  this.generate = function(labyrinthe) {
+    this._initCellules(labyrinthe);
+    // console.log('Labyrinthe: ' + JSON.stringify(labyrinthe));
+    var celluleX = Math.floor(Math.random() * labyrinthe.width);
+    var celluleY = Math.floor(Math.random() * labyrinthe.height);
+    var lastOpenedCellules = [];
+
+    var cellule;
+    var nextCellule = labyrinthe.cellules[celluleY][celluleX];
+    // Nombre d'itérations: labyrinthe.width * labyrinthe.height - 1
+    // Ou sinon lorsqu'il ne reste plus qu'une seule zone
+    while (nextCellule != null) {
+    // for (var i = 0; i < (labyrinthe.width * labyrinthe.height - 1); i++) {
+    // for (var i = 0; i < 50; i++) {
+      cellule = nextCellule;
+      cellule.processed = true;
+      var possibleWallsToRemove = this._getPossibleWallsToRemove(cellule, labyrinthe);
+      // S'il ya au moins une case non traitée autour
+      if (possibleWallsToRemove.length > 0) {
+        var wallToRemove = possibleWallsToRemove[Math.floor(Math.random() * possibleWallsToRemove.length)];
+        // On casse le mur
+        this._breakWall(cellule, wallToRemove, labyrinthe);
+        // S'il reste encore au moins 1 case non traitée autour après ça
+        if (possibleWallsToRemove.length - 1 > 0) {
+          lastOpenedCellules.push(cellule);
+        }
+        nextCellule = wallToRemove.nextCellule;
+      } else {
+        nextCellule = lastOpenedCellules.pop();
+      }
+    }
+    return labyrinthe;
+  }
+});
+
+// https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins
+app.service('randomWayFusion', function() {
+  this._initZones = function(labyrinthe) {
+    var zones = [];
+    var id = 0;
+    for (var j = 0; j < labyrinthe.height; j++) {
+      var ligne = labyrinthe.cellules[j];
+      // console.log('ligne: ' + JSON.stringify(ligne));
+      for (var i = 0; i < labyrinthe.width; i++) {
+        var cellule = ligne[i];
+        zones[id] = {
+          id: id,
+          cellules: [ cellule ]
+        };
+        cellule.zoneId = id;
+        // console.log('zones[' + id + ']: ' + JSON.stringify(zones[id]));
+        id++;
+      }
+    }
+    return zones;
+  }
+
+  this._initWalls = function(labyrinthe) {
+    var walls = [];
+    var id = 0;
+    // On ne traite pas les murs extérieurs, on fera un trou de chaque côté plus tard
+    for (var j = 0; j < labyrinthe.height; j++) {
+      // console.log('ligne: ' + JSON.stringify(ligne));
+      for (var i = 0; i < labyrinthe.width; i++) {
+        if (j < (labyrinthe.height - 1)) {
+          var wallHorizontal = {
+            id: id,
+            type: "h",
+            celluleTop: labyrinthe.cellules[j][i],
+            celluleBottom: labyrinthe.cellules[j + 1][i],
+            multiZones: true
+          }
+          walls[id] = wallHorizontal;
+          // console.log('walls[' + id + ']: ' + JSON.stringify(walls[id]));
+          id++;
+        }
+        if ( i < (labyrinthe.width - 1)) {
+          var wallVertical = {
+            id: id,
+            type: "v",
+            celluleLeft: labyrinthe.cellules[j][i],
+            celluleRight: labyrinthe.cellules[j][i + 1],
+            multiZones: true
+          }
+          walls[id] = wallVertical;
+          // console.log('walls[' + id + ']: ' + JSON.stringify(walls[id]));
+          id++;
+        }
+      }
+    }
+
+    return walls;
+  }
+
+  this.generate = function(labyrinthe) {
+    // Au départ:
+    // * Chaque zone contient 1 cellule 
+    // ==> On a donc autant de zones que de cellules
+    // * Toutes les cellules ont 4 murs
+    // ==> On a donc:
+    //    (labyrinthe.width + 1) murs verticaux
+    //    (labyrinthe.height + 1) murs horizontaux
+    
+    var zones = this._initZones(labyrinthe);
+    // console.log('zones: ' + JSON.stringify(zones));
+    var walls = this._initWalls(labyrinthe);
+
+    // Nombre d'itérations: labyrinthe.width * labyrinthe.height - 1
+    // Ou sinon lorsqu'il ne reste plus qu'une seule zone
+    for (var i = 0; i < (labyrinthe.width * labyrinthe.height - 1); i++) {
+      var wallIdToDelete = Math.floor(Math.random() * walls.length);
+      // console.log('remaing walls: ' + walls.length + ', wallIdToDelete: ' + walls[wallIdToDelete].id);
+      var wallToDelete = walls[wallIdToDelete];
+      if (wallToDelete.type == "h") {
+        // Les cellules de la zone du bas sont recopiées dans la zone du haut
+        var zoneTop = zones[wallToDelete.celluleTop.zoneId];
+        var zoneBottom = zones[wallToDelete.celluleBottom.zoneId];
+        for (var j = 0; j < zoneBottom.cellules.length; j++) {
+          var cellule = zoneBottom.cellules[j];
+          // console.log('cellule:' + JSON.stringify(cellule) + ' to zoneId: ' + zoneTop.id);
+          cellule.zoneId = zoneTop.id;
+        }
+        zoneTop.cellules = zoneTop.cellules.concat(zoneBottom.cellules);
+
+        // On supprime le mur du bas (0x8) de la cellule du haut...
+        wallToDelete.celluleTop.value = wallToDelete.celluleTop.value & 0x7;
+        // ... et le mur du haut (0x2) de la cellule du bas...
+        wallToDelete.celluleBottom.value = wallToDelete.celluleBottom.value & 0xD;
+      }
+      if (wallToDelete.type == "v") {
+        // Les cellules de la zone de droite sont recopiées dans la zone de gauche
+        var zoneLeft = zones[wallToDelete.celluleLeft.zoneId];
+        var zoneRight = zones[wallToDelete.celluleRight.zoneId];
+        for (var j = 0; j < zoneRight.cellules.length; j++) {
+          var cellule = zoneRight.cellules[j];
+          // console.log('cellule:' + JSON.stringify(cellule) + ' to zoneId: ' + zoneLeft.id);
+          cellule.zoneId = zoneLeft.id;
+        }
+        zoneLeft.cellules = zoneLeft.cellules.concat(zoneRight.cellules);
+        // On supprime le mur de droite (0x1) de la cellule de gauche...
+        wallToDelete.celluleLeft.value = wallToDelete.celluleLeft.value & 0xE;
+        // ... et le mur de gauche (0x4) de la cellule du droite...
+        wallToDelete.celluleRight.value = wallToDelete.celluleRight.value & 0xB;
+      }
+      // On supprime le mur de la liste des murs
+      walls.splice(walls.indexOf(wallToDelete), 1);
+      // On n'a plus besoin de gérer la suppression des murs entre 2 cellules d'une même zone
+      // Donc on retient uniquement les murs entre 2 zones distinctes
+      var remainingWalls = [];
+      for (var j = 0; j < walls.length; j++) {
+        var wall = walls[j];
+        if (wall.type == "h") {
+          if (wall.celluleTop.zoneId != wall.celluleBottom.zoneId) {
+            remainingWalls.push(wall);
+          }
+        }
+        if (wall.type == "v") {
+          if (wall.celluleLeft.zoneId != wall.celluleRight.zoneId) {
+            remainingWalls.push(wall);
+          }
+        }
+      }
+      walls = remainingWalls;
+    }
+    return labyrinthe;
+  }
+});
+
+app.controller('myCtrl', function($scope, randomWayFusion, comprehensiveExploration) {
+	console.log('Setting labyrinthe...');
+	var Labyrinthe = function() {
+    this.width = 20;
+    this.height = 15;
+    this.cellules = [];
+    for (var j = 0; j < this.height; j++) {
+      this.cellules[j] = [];
+      for (var i = 0; i < this.width; i++) {
+        this.cellules[j][i] = {
+          x: i,
+          y: j,
+          value: 0xF
+        }
+      }
+    }
+    this.getCssClass = function(cellule) {
+      return "cellule x" + cellule.value.toString(16).toUpperCase();
+    }
+  }
+  $scope.labyrinthe = new Labyrinthe();
+  $scope.labyrinthe2 = new Labyrinthe();
+  randomWayFusion.generate($scope.labyrinthe);
+  comprehensiveExploration.generate($scope.labyrinthe2);
+	// console.log('labyrinthe: ' + JSON.stringify($scope.labyrinthe));
+});
+
+  </script>
+</body>
+</html>

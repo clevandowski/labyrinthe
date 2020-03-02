@@ -11,7 +11,7 @@
     <h2>
       <span>Iteration {{labyrinthe2.iteration}}</span>
     </h2>
-    <div class="bordure" ng-click="listener.generateComprehensiveExploration(labyrinthe2)">
+    <div class="bordure" ng-click="listener.generate(labyrinthe, labyrinthe2)">
       <div 
         ng-repeat="ligne in labyrinthe2.cellules"
         class="line">
@@ -32,7 +32,7 @@
     <h2>
       <span>Iteration {{labyrinthe.iteration}}</span>
     </h2>
-    <div class="bordure" ng-click="listener.generateRandomWayFusion(labyrinthe)">
+    <div class="bordure" ng-click="listener.generate(labyrinthe, labyrinthe2)">
       <div 
         ng-repeat="ligne in labyrinthe.cellules"
         class="line">
@@ -358,6 +358,10 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
 	// console.log('labyrinthe: ' + JSON.stringify($scope.labyrinthe));
 
   var EventListener = function(randomWayFusion, labyrinthe, comprehensiveExploration, labyrinthe2) {
+    this.generate = function(labyrinthe, labyrinthe2) {
+      this.generateRandomWayFusion(labyrinthe);
+      this.generateComprehensiveExploration(labyrinthe2);
+    }
     this.generateComprehensiveExploration = function(labyrinthe) {
       function finish() {
         clearInterval(intervalId);

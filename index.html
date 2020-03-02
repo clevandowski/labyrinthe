@@ -1,35 +1,41 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <link rel="stylesheet" href="css/styles.css?v=1.0">
-<script src="scripts/angular.min.js"></script>
+<script src="scripts/angular.js"></script>
 <body>
 <div ng-app="myApp" ng-controller="myCtrl">
   <h1>
-    <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins">Fusion aléatoire de chemins</a>
-  </h1>
-  <div class="bordure">
-    <div 
-      ng-repeat="ligne in labyrinthe.cellules"
-      class="line">
-      <div 
-        ng-repeat="cellule in ligne"
-        ng-class="labyrinthe.getCssClass(cellule)">{{cellule.zoneId}}</div>
-    </div>
-  </div>
-  <br/><br/>
-  <h1>
     <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Exploration_exhaustive">Exploration exhaustive</a>
   </h1>
-  <div class="bordure">
+  <h2>
+    <span>Iteration {{labyrinthe2.iteration}}</span>
+  </h2>
+  <div class="bordure" ng-click="listener.generateComprehensiveExploration(labyrinthe2)">
     <div 
       ng-repeat="ligne in labyrinthe2.cellules"
       class="line">
       <div 
         ng-repeat="cellule in ligne"
-        ng-class="labyrinthe2.getCssClass(cellule)">{{cellule.processed}}</div>
+        ng-class="labyrinthe2.getCssClass(cellule)"><!--{{cellule.processed}}--></div>
     </div>
   </div>
-  <br/><br/><br/><br/><br/><br/><br/><br/>
+  <br/><br/><br/>
+  <h1>
+    <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins">Fusion aléatoire de chemins</a>
+  </h1>
+  <h2>
+    <span>Iteration {{labyrinthe.iteration}}</span>
+  </h2>
+  <div class="bordure" ng-click="listener.generateRandomWayFusion(labyrinthe)">
+    <div 
+      ng-repeat="ligne in labyrinthe.cellules"
+      class="line">
+      <div 
+        ng-repeat="cellule in ligne"
+        ng-class="labyrinthe.getCssClass(cellule)"><!-- {{cellule.zoneId}} --></div>
+    </div>
+  </div>
+  <br/><br/>
 </div>
 <script type="text/javascript">
   
@@ -37,24 +43,12 @@ var app = angular.module('myApp', []);
 
 // https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins
 app.service('comprehensiveExploration', function() {
-  this._initCellules = function(labyrinthe) {
-    for (var j = 0; j < labyrinthe.height; j++) {
-      var ligne = labyrinthe.cellules[j];
-      // console.log('ligne: ' + JSON.stringify(ligne));
-      for (var i = 0; i < labyrinthe.width; i++) {
-        var cellule = ligne[i];
-        cellule.processed = false;
-        // console.log('zones[' + id + ']: ' + JSON.stringify(zones[id]));
-      }
-    }
-  }
-
   this._getPossibleWallsToRemove = function(cellule, labyrinthe) {
     var possibleWallsToRemove = [];
     // S'il y une cellule à gauche
     if (cellule.x > 0
         // Et qu'il y un mur
-        && (cellule.value & 0x4) == 0x4
+        // && (cellule.value & 0x4) == 0x4
         // Et que la cellule de gauche n'a pas été traitée
         && labyrinthe.cellules[cellule.y][cellule.x - 1].processed == false) {
       possibleWallsToRemove.push({
@@ -66,7 +60,7 @@ app.service('comprehensiveExploration', function() {
     // S'il y une cellule à droite
     if (cellule.x < (labyrinthe.width - 1)
         // Et qu'il y un mur
-        && (cellule.value & 0x1) == 0x1
+        // && (cellule.value & 0x1) == 0x1
         // Et que la cellule de droite n'a pas été traitée
         && labyrinthe.cellules[cellule.y][cellule.x + 1].processed == false) {
       possibleWallsToRemove.push({
@@ -78,7 +72,7 @@ app.service('comprehensiveExploration', function() {
     // S'il y une cellule en haut
     if (cellule.y > 0
         // Et qu'il y un mur
-        && (cellule.value & 0x2) == 0x2
+        // && (cellule.value & 0x2) == 0x2
         // Et que la cellule en haut n'a pas été traitée
         && labyrinthe.cellules[cellule.y - 1][cellule.x].processed == false) {
       possibleWallsToRemove.push({
@@ -90,7 +84,7 @@ app.service('comprehensiveExploration', function() {
     // S'il y une cellule en bas
     if (cellule.y < (labyrinthe.height - 1)
         // Et qu'il y un mur
-        && (cellule.value & 0x8) == 0x8
+        // && (cellule.value & 0x8) == 0x8
         // Et que la cellule en bas n'a pas été traitée
         && labyrinthe.cellules[cellule.y + 1][cellule.x].processed == false) {
       possibleWallsToRemove.push({
@@ -103,8 +97,6 @@ app.service('comprehensiveExploration', function() {
   }
 
   this._breakWall = function(cellule, wallToRemove, labyrinthe) {
-    // var nextCellule = labyrinthe.cellules[wallToRemove.celluleY][wallToRemove.celluleX];
-    // console.log('wallToRemove: ' + JSON.stringify(wallToRemove));
     // console.log('before: ' + cellule.value + ' ' + wallToRemove.nextCellule.value);
     var mask = 0xF ^ wallToRemove.orientation;
     cellule.value = cellule.value & mask;
@@ -113,38 +105,71 @@ app.service('comprehensiveExploration', function() {
     // console.log('after: ' + cellule.value + ' ' + wallToRemove.nextCellule.value);
   } 
 
-  this.generate = function(labyrinthe) {
-    this._initCellules(labyrinthe);
-    // console.log('Labyrinthe: ' + JSON.stringify(labyrinthe));
-    var celluleX = Math.floor(Math.random() * labyrinthe.width);
-    var celluleY = Math.floor(Math.random() * labyrinthe.height);
-    var lastOpenedCellules = [];
-
-    var cellule;
-    var nextCellule = labyrinthe.cellules[celluleY][celluleX];
-    // Nombre d'itérations: labyrinthe.width * labyrinthe.height - 1
-    // Ou sinon lorsqu'il ne reste plus qu'une seule zone
-    while (nextCellule != null) {
-    // for (var i = 0; i < (labyrinthe.width * labyrinthe.height - 1); i++) {
-    // for (var i = 0; i < 50; i++) {
-      cellule = nextCellule;
-      cellule.processed = true;
-      var possibleWallsToRemove = this._getPossibleWallsToRemove(cellule, labyrinthe);
-      // S'il ya au moins une case non traitée autour
-      if (possibleWallsToRemove.length > 0) {
-        var wallToRemove = possibleWallsToRemove[Math.floor(Math.random() * possibleWallsToRemove.length)];
-        // On casse le mur
-        this._breakWall(cellule, wallToRemove, labyrinthe);
-        // S'il reste encore au moins 1 case non traitée autour après ça
-        if (possibleWallsToRemove.length - 1 > 0) {
-          lastOpenedCellules.push(cellule);
-        }
-        nextCellule = wallToRemove.nextCellule;
-      } else {
-        nextCellule = lastOpenedCellules.pop();
+  this.init = function(labyrinthe) {
+    for (var j = 0; j < labyrinthe.height; j++) {
+      var ligne = labyrinthe.cellules[j];
+      // console.log('ligne: ' + JSON.stringify(ligne));
+      for (var i = 0; i < labyrinthe.width; i++) {
+        var cellule = ligne[i];
+        cellule.processed = false;
+        cellule.current = false;
+        // console.log('zones[' + id + ']: ' + JSON.stringify(zones[id]));
       }
     }
-    return labyrinthe;
+    var firstCelluleX = Math.floor(Math.random() * labyrinthe.width);
+    var firstCelluleY = Math.floor(Math.random() * labyrinthe.height);
+    labyrinthe.lastOpenedCellules = [];
+    labyrinthe.nextCellule = labyrinthe.cellules[firstCelluleY][firstCelluleX];
+    labyrinthe.nextCellule.current = true;
+    labyrinthe.iteration = 0;
+  }
+
+  this.generate = function(labyrinthe, finish) {
+    // this._initCellules(labyrinthe);
+    // console.log('Labyrinthe: ' + JSON.stringify(labyrinthe));
+
+    if (labyrinthe.nextCellule != null) {
+      var cellule = labyrinthe.nextCellule;
+      cellule.processed = true;
+
+      // Si la cellule est un cul de sac il faut trouver une cellule déjà traitée 
+      // qui a au moins 1 cellule non traitée autour d'elle, à partir de laquelle repartir 
+      // Tant que la cellule n'a pas de cellule non traitée (donc avec un mur) autour d'elle (haut bas gauche droite)
+      var possibleWallsToRemove = [];
+      while ((cellule != null)
+              // Attention là c'est pas une condition c'est une affectation 
+              && (possibleWallsToRemove = this._getPossibleWallsToRemove(cellule, labyrinthe)) 
+              && (possibleWallsToRemove.length == 0)) {
+        // On dépile les cellule précédentes qui avaient encore au moins 1 cellule non traitée autour d'elle
+        // Jusqu'à ce qu'on trouve une cellule qui a une cellule non traitée autour d'elle
+        labyrinthe.nextCellule = labyrinthe.lastOpenedCellules.pop();
+        cellule = labyrinthe.nextCellule;
+      }
+
+      if (cellule != null) {
+        console.log('labyrinthe.iteration: ' + labyrinthe.iteration + ', cellule: ' + JSON.stringify(cellule));
+      // if (possibleWallsToRemove.length > 0) {
+        // On choisit au hasard un mur dans la liste des murs cassables (min 1, max 4) autour de la cellule
+        var wallToRemove = possibleWallsToRemove[Math.floor(Math.random() * possibleWallsToRemove.length)];
+        // On le casse
+        this._breakWall(cellule, wallToRemove, labyrinthe);
+        // S'il reste encore au moins 1 cellule non traitée autour de la cellule après ça
+        if (possibleWallsToRemove.length - 1 > 0) {
+          // On empile la cellule dans la liste des cellules ayant encore au moins 1 cellule non traitée autour d'elle 
+          // Donc avec un mur à casser
+          labyrinthe.lastOpenedCellules.push(cellule);
+        }
+        labyrinthe.nextCellule = wallToRemove.nextCellule;
+        labyrinthe.nextCellule.current = true;
+        cellule.current = false;
+      } else {
+        finish();
+      }
+    } else {
+      console.log("ERROR labyrinthe.nextCellule is null");
+    }
+    labyrinthe.iteration++;
+    console.log("INFO labyrinthe.iteration: " + labyrinthe.iteration);
   }
 });
 
@@ -167,7 +192,7 @@ app.service('randomWayFusion', function() {
         id++;
       }
     }
-    return zones;
+    labyrinthe.zones = zones;
   }
 
   this._initWalls = function(labyrinthe) {
@@ -203,11 +228,16 @@ app.service('randomWayFusion', function() {
         }
       }
     }
-
-    return walls;
+    labyrinthe.walls = walls;
   }
 
-  this.generate = function(labyrinthe) {
+  this.init = function(labyrinthe) {
+    this._initZones(labyrinthe);
+    this._initWalls(labyrinthe);
+    labyrinthe.iteration = 0;
+  }
+
+  this.generate = function(labyrinthe, finish) {
     // Au départ:
     // * Chaque zone contient 1 cellule 
     // ==> On a donc autant de zones que de cellules
@@ -216,13 +246,14 @@ app.service('randomWayFusion', function() {
     //    (labyrinthe.width + 1) murs verticaux
     //    (labyrinthe.height + 1) murs horizontaux
     
-    var zones = this._initZones(labyrinthe);
+    var zones = labyrinthe.zones;
     // console.log('zones: ' + JSON.stringify(zones));
-    var walls = this._initWalls(labyrinthe);
+    var walls = labyrinthe.walls;
 
     // Nombre d'itérations: labyrinthe.width * labyrinthe.height - 1
     // Ou sinon lorsqu'il ne reste plus qu'une seule zone
-    for (var i = 0; i < (labyrinthe.width * labyrinthe.height - 1); i++) {
+    // for (var i = 0; i < (labyrinthe.width * labyrinthe.height - 1); i++) {
+    if (zones.length > 1) {
       var wallIdToDelete = Math.floor(Math.random() * walls.length);
       // console.log('remaing walls: ' + walls.length + ', wallIdToDelete: ' + walls[wallIdToDelete].id);
       var wallToDelete = walls[wallIdToDelete];
@@ -275,17 +306,22 @@ app.service('randomWayFusion', function() {
           }
         }
       }
-      walls = remainingWalls;
+      labyrinthe.walls = remainingWalls;
+      // $scope.$apply();
+    } else {
+      console.log('randomWayFusion finished');
+      finish();
     }
-    return labyrinthe;
+    // return labyrinthe;
+    labyrinthe.iteration++;
   }
 });
 
-app.controller('myCtrl', function($scope, randomWayFusion, comprehensiveExploration) {
+app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, comprehensiveExploration) {
 	console.log('Setting labyrinthe...');
 	var Labyrinthe = function() {
-    this.width = 20;
-    this.height = 15;
+    this.width = 50;
+    this.height = 50;
     this.cellules = [];
     for (var j = 0; j < this.height; j++) {
       this.cellules[j] = [];
@@ -298,15 +334,50 @@ app.controller('myCtrl', function($scope, randomWayFusion, comprehensiveExplorat
       }
     }
     this.getCssClass = function(cellule) {
-      return "cellule x" + cellule.value.toString(16).toUpperCase();
+      var cssClass = "cellule x" + cellule.value.toString(16).toUpperCase();
+      if (cellule.current) {
+        cssClass = cssClass + " current";
+      }
+      return cssClass;
     }
   }
   $scope.labyrinthe = new Labyrinthe();
+  // $scope.$watch($scope.labyrinthe, null, true);
   $scope.labyrinthe2 = new Labyrinthe();
-  randomWayFusion.generate($scope.labyrinthe);
-  comprehensiveExploration.generate($scope.labyrinthe2);
+  // $scope.$watch($scope.labyrinthe2.cellules[][].value);
+  randomWayFusion.init($scope.labyrinthe);
+  comprehensiveExploration.init($scope.labyrinthe2);
+  // $scope.$watch($scope.labyrinthe2.cellules, null, true);
 	// console.log('labyrinthe: ' + JSON.stringify($scope.labyrinthe));
+
+  var EventListener = function(randomWayFusion, labyrinthe, comprehensiveExploration, labyrinthe2) {
+    this.generateComprehensiveExploration = function(labyrinthe) {
+      function finish() {
+        clearInterval(intervalId);
+      }
+      // On lance la génération en boucle en async pour qu'angularjs affiche bien le labyrinthe
+      // au fur & à mesure de sa génération
+      // Quand c'est fini la callback "finish" arrête la boucle
+      var intervalId = setInterval(function() { 
+        $scope.$evalAsync(comprehensiveExploration.generate(labyrinthe, finish)) 
+      }, 0);
+    }
+    this.generateRandomWayFusion = function(labyrinthe) {
+      function finish() {
+        clearInterval(intervalRandomWayFusion);
+      }
+      // On lance la génération en boucle en async pour qu'angularjs affiche bien le labyrinthe
+      // au fur & à mesure de sa génération
+      // Quand c'est fini la callback "finish" arrête la boucle
+      var intervalRandomWayFusion = setInterval(function() { 
+        $scope.$evalAsync(randomWayFusion.generate(labyrinthe, finish)) 
+      }, 0);
+    }
+  }
+  var eventListener = new EventListener(randomWayFusion, $scope.labyrinthe, comprehensiveExploration, $scope.labyrinthe2);
+  $scope.listener = eventListener;
 });
+
 
   </script>
 </body>

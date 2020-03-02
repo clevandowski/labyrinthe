@@ -4,38 +4,45 @@
 <script src="scripts/angular.js"></script>
 <body>
 <div ng-app="myApp" ng-controller="myCtrl">
-  <h1>
-    <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Exploration_exhaustive">Exploration exhaustive</a>
-  </h1>
-  <h2>
-    <span>Iteration {{labyrinthe2.iteration}}</span>
-  </h2>
-  <div class="bordure" ng-click="listener.generateComprehensiveExploration(labyrinthe2)">
-    <div 
-      ng-repeat="ligne in labyrinthe2.cellules"
-      class="line">
+  <div style="display: inline-block; position: relative;">
+    <h1>
+      <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Exploration_exhaustive">Exploration exhaustive</a>
+    </h1>
+    <h2>
+      <span>Iteration {{labyrinthe2.iteration}}</span>
+    </h2>
+    <div class="bordure" ng-click="listener.generateComprehensiveExploration(labyrinthe2)">
       <div 
-        ng-repeat="cellule in ligne"
-        ng-class="labyrinthe2.getCssClass(cellule)"><!--{{cellule.processed}}--></div>
+        ng-repeat="ligne in labyrinthe2.cellules"
+        class="line">
+        <div 
+          ng-repeat="cellule in ligne"
+          ng-class="labyrinthe2.getCssClass(cellule)"><!--{{cellule.processed}}--></div>
+      </div>
     </div>
   </div>
-  <br/><br/><br/>
-  <h1>
-    <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins">Fusion aléatoire de chemins</a>
-  </h1>
-  <h2>
-    <span>Iteration {{labyrinthe.iteration}}</span>
-  </h2>
-  <div class="bordure" ng-click="listener.generateRandomWayFusion(labyrinthe)">
-    <div 
-      ng-repeat="ligne in labyrinthe.cellules"
-      class="line">
-      <div 
-        ng-repeat="cellule in ligne"
-        ng-class="labyrinthe.getCssClass(cellule)"><!-- {{cellule.zoneId}} --></div>
-    </div>
+  <div style="display: inline-block; position: relative;">
+    <h1>VS</h1>
   </div>
-  <br/><br/>
+  <!-- <br/><br/><br/> -->
+  <div style="display: inline-block; position: relative;">
+    <h1>
+      <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins">Fusion aléatoire de chemins</a>
+    </h1>
+    <h2>
+      <span>Iteration {{labyrinthe.iteration}}</span>
+    </h2>
+    <div class="bordure" ng-click="listener.generateRandomWayFusion(labyrinthe)">
+      <div 
+        ng-repeat="ligne in labyrinthe.cellules"
+        class="line">
+        <div 
+          ng-repeat="cellule in ligne"
+          ng-class="labyrinthe.getCssClass(cellule)"><!-- {{cellule.zoneId}} --></div>
+      </div>
+    </div>
+  <div>
+    <!-- <br/><br/> -->
 </div>
 <script type="text/javascript">
   
@@ -147,8 +154,7 @@ app.service('comprehensiveExploration', function() {
       }
 
       if (cellule != null) {
-        console.log('labyrinthe.iteration: ' + labyrinthe.iteration + ', cellule: ' + JSON.stringify(cellule));
-      // if (possibleWallsToRemove.length > 0) {
+        // console.log('labyrinthe.iteration: ' + labyrinthe.iteration + ', cellule: ' + JSON.stringify(cellule));
         // On choisit au hasard un mur dans la liste des murs cassables (min 1, max 4) autour de la cellule
         var wallToRemove = possibleWallsToRemove[Math.floor(Math.random() * possibleWallsToRemove.length)];
         // On le casse
@@ -163,13 +169,14 @@ app.service('comprehensiveExploration', function() {
         labyrinthe.nextCellule.current = true;
         cellule.current = false;
       } else {
+        console.log('comprehensiveExploration finished');
         finish();
       }
     } else {
       console.log("ERROR labyrinthe.nextCellule is null");
     }
     labyrinthe.iteration++;
-    console.log("INFO labyrinthe.iteration: " + labyrinthe.iteration);
+    // console.log("INFO labyrinthe.iteration: " + labyrinthe.iteration);
   }
 });
 
@@ -253,7 +260,7 @@ app.service('randomWayFusion', function() {
     // Nombre d'itérations: labyrinthe.width * labyrinthe.height - 1
     // Ou sinon lorsqu'il ne reste plus qu'une seule zone
     // for (var i = 0; i < (labyrinthe.width * labyrinthe.height - 1); i++) {
-    if (zones.length > 1) {
+    if (walls.length > 0) {
       var wallIdToDelete = Math.floor(Math.random() * walls.length);
       // console.log('remaing walls: ' + walls.length + ', wallIdToDelete: ' + walls[wallIdToDelete].id);
       var wallToDelete = walls[wallIdToDelete];

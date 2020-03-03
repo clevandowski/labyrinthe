@@ -9,7 +9,7 @@ body, html {
   /* height: 100%; */
   position: relative;
   /* border-style: solid;
-  border-width: 2px;
+  border-width: 1px;
   border-color: red; */
   /* clear: left; */
 }
@@ -25,233 +25,250 @@ body, html {
   /* width: 5%;
   height: 5%; */
   position: relative;
+  /* background-color: transparent; */
+  /* opacity: 1; */
+  /* transition: 1s; */
 }
 
 .current {
-  background-color: cadetblue;
+  background-color: black;
+  /* opacity: 0; */
+  /* transition: 0.3s; */
+}
+
+.processed {
+  background-color: transparent;
+  /* opacity: 0; */
+  /* transition: 1s; */
+}
+
+.visited {
+  background-color: red;
+  /* opacity: 0; */
+  /* transition: 1s; */
 }
 
 .x0 {
   border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: white;
+  border-right-width: 1px;
+  border-right-color: transparent;
   border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: white;
+  border-top-width: 1px;
+  border-top-color: transparent;
   border-left-style: solid;
-  border-left-width: 2px;
-  border-left-color: white;
+  border-left-width: 1px;
+  border-left-color: transparent;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: white;
+  border-bottom-width: 1px;
+  border-bottom-color: transparent;
 }
 .x1 {
   border-right-style: solid;
-  border-right-width: 2px;
+  border-right-width: 1px;
   border-right-color: black;
   border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: white;
+  border-top-width: 1px;
+  border-top-color: transparent;
   border-left-style: solid;
-  border-left-width: 2px;
-  border-left-color: white;
+  border-left-width: 1px;
+  border-left-color: transparent;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: white;
+  border-bottom-width: 1px;
+  border-bottom-color: transparent;
 }
 .x2 {
   border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: white;
+  border-right-width: 1px;
+  border-right-color: transparent;
   border-top-style: solid;
-  border-top-width: 2px;
+  border-top-width: 1px;
   border-top-color: black;
   border-left-style: solid;
-  border-left-width: 2px;
-  border-left-color: white;
+  border-left-width: 1px;
+  border-left-color: transparent;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: white;
+  border-bottom-width: 1px;
+  border-bottom-color: transparent;
 }
 .x3 {
   border-right-style: solid;
-  border-right-width: 2px;
+  border-right-width: 1px;
   border-right-color: black;
   border-top-style: solid;
-  border-top-width: 2px;
+  border-top-width: 1px;
   border-top-color: black;
   border-left-style: solid;
-  border-left-width: 2px;
-  border-left-color: white;
+  border-left-width: 1px;
+  border-left-color: transparent;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: white;
+  border-bottom-width: 1px;
+  border-bottom-color: transparent;
 }
 .x4 {
   border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: white;
+  border-right-width: 1px;
+  border-right-color: transparent;
   border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: white;
+  border-top-width: 1px;
+  border-top-color: transparent;
   border-left-style: solid;
-  border-left-width: 2px;
+  border-left-width: 1px;
   border-left-color: black;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: white;
+  border-bottom-width: 1px;
+  border-bottom-color: transparent;
 }
 .x5 {
   border-right-style: solid;
-  border-right-width: 2px;
+  border-right-width: 1px;
   border-right-color: black;
   border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: white;
+  border-top-width: 1px;
+  border-top-color: transparent;
   border-left-style: solid;
-  border-left-width: 2px;
+  border-left-width: 1px;
   border-left-color: black;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: white;
+  border-bottom-width: 1px;
+  border-bottom-color: transparent;
 }
 .x6 {
   border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: white;
+  border-right-width: 1px;
+  border-right-color: transparent;
   border-top-style: solid;
-  border-top-width: 2px;
+  border-top-width: 1px;
   border-top-color: black;
   border-left-style: solid;
-  border-left-width: 2px;
+  border-left-width: 1px;
   border-left-color: black;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: white;
+  border-bottom-width: 1px;
+  border-bottom-color: transparent;
 }
 .x7 {
   border-right-style: solid;
-  border-right-width: 2px;
+  border-right-width: 1px;
   border-right-color: black;
   border-top-style: solid;
-  border-top-width: 2px;
+  border-top-width: 1px;
   border-top-color: black;
   border-left-style: solid;
-  border-left-width: 2px;
+  border-left-width: 1px;
   border-left-color: black;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: white;
+  border-bottom-width: 1px;
+  border-bottom-color: transparent;
 }
 .x8 {
   border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: white;
+  border-right-width: 1px;
+  border-right-color: transparent;
   border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: white;
+  border-top-width: 1px;
+  border-top-color: transparent;
   border-left-style: solid;
-  border-left-width: 2px;
-  border-left-color: white;
+  border-left-width: 1px;
+  border-left-color: transparent;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
+  border-bottom-width: 1px;
   border-bottom-color: black;
 }
 .x9 {
   border-right-style: solid;
-  border-right-width: 2px;
+  border-right-width: 1px;
   border-right-color: black;
   border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: white;
+  border-top-width: 1px;
+  border-top-color: transparent;
   border-left-style: solid;
-  border-left-width: 2px;
-  border-left-color: white;
+  border-left-width: 1px;
+  border-left-color: transparent;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
+  border-bottom-width: 1px;
   border-bottom-color: black;
 }
 .xA {
   border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: white;
+  border-right-width: 1px;
+  border-right-color: transparent;
   border-top-style: solid;
-  border-top-width: 2px;
+  border-top-width: 1px;
   border-top-color: black;
   border-left-style: solid;
-  border-left-width: 2px;
-  border-left-color: white;
+  border-left-width: 1px;
+  border-left-color: transparent;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
+  border-bottom-width: 1px;
   border-bottom-color: black;
 }
 .xB {
   border-right-style: solid;
-  border-right-width: 2px;
+  border-right-width: 1px;
   border-right-color: black;
   border-top-style: solid;
-  border-top-width: 2px;
+  border-top-width: 1px;
   border-top-color: black;
   border-left-style: solid;
-  border-left-width: 2px;
-  border-left-color: white;
+  border-left-width: 1px;
+  border-left-color: transparent;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
+  border-bottom-width: 1px;
   border-bottom-color: black;
 }
 .xC {
   border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: white;
+  border-right-width: 1px;
+  border-right-color: transparent;
   border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: white;
+  border-top-width: 1px;
+  border-top-color: transparent;
   border-left-style: solid;
-  border-left-width: 2px;
+  border-left-width: 1px;
   border-left-color: black;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
+  border-bottom-width: 1px;
   border-bottom-color: black;
 }
 .xD {
   border-right-style: solid;
-  border-right-width: 2px;
+  border-right-width: 1px;
   border-right-color: black;
   border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: white;
+  border-top-width: 1px;
+  border-top-color: transparent;
   border-left-style: solid;
-  border-left-width: 2px;
+  border-left-width: 1px;
   border-left-color: black;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
+  border-bottom-width: 1px;
   border-bottom-color: black;
 }
 .xE {
   border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: white;
+  border-right-width: 1px;
+  border-right-color: transparent;
   border-top-style: solid;
-  border-top-width: 2px;
+  border-top-width: 1px;
   border-top-color: black;
   border-left-style: solid;
-  border-left-width: 2px;
+  border-left-width: 1px;
   border-left-color: black;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
+  border-bottom-width: 1px;
   border-bottom-color: black;
 }
 .xF {
   border-right-style: solid;
-  border-right-width: 2px;
+  border-right-width: 1px;
   border-right-color: black;
   border-top-style: solid;
-  border-top-width: 2px;
+  border-top-width: 1px;
   border-top-color: black;
   border-left-style: solid;
-  border-left-width: 2px;
+  border-left-width: 1px;
   border-left-color: black;
   border-bottom-style: solid;
-  border-bottom-width: 2px;
+  border-bottom-width: 1px;
   border-bottom-color: black;
 }

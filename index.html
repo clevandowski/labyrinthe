@@ -10,6 +10,7 @@
     </h1>
     <h2>
       <span>Iteration {{labyrinthe2.iteration}}</span>
+      <span ng-click="listener.resolveLabyrinthe(labyrinthe2)">Resolve</span>
     </h2>
     <div class="bordure" ng-click="listener.generate(labyrinthe, labyrinthe2)">
       <div 
@@ -31,6 +32,7 @@
     </h1>
     <h2>
       <span>Iteration {{labyrinthe.iteration}}</span>
+      <span ng-click="listener.resolveLabyrinthe(labyrinthe)">Resolve</span>
     </h2>
     <div class="bordure" ng-click="listener.generate(labyrinthe, labyrinthe2)">
       <div 
@@ -150,7 +152,9 @@ app.service('comprehensiveExploration', function() {
         // On dépile les cellule précédentes qui avaient encore au moins 1 cellule non traitée autour d'elle
         // Jusqu'à ce qu'on trouve une cellule qui a une cellule non traitée autour d'elle
         labyrinthe.nextCellule = labyrinthe.lastOpenedCellules.pop();
+        cellule.current = false;
         cellule = labyrinthe.nextCellule;
+        // cellule.current = true;
       }
 
       if (cellule != null) {
@@ -324,7 +328,58 @@ app.service('randomWayFusion', function() {
   }
 });
 
-app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, comprehensiveExploration) {
+app.service('resolve', function() {
+  this._setTreeTo = function(cellule, labyrinthe, fromCellule) {
+    // S'il y une cellule à gauche
+    if (cellule.x > 0
+        // Et qu'il y a pas de mur
+        && (cellule.value & 0x4) == 0
+        // Et que ce n'est pas la cellule d'où on vient
+        && fromCellule.x != (cellule.x - 1)) {
+          labyrinthe.cellules[cellule.y][cellule.x - 1].parent = cellule;
+          this._setTreeTo(labyrinthe.cellules[cellule.y][cellule.x - 1], labyrinthe, cellule);
+    }
+    // S'il y une cellule à droite
+    if (cellule.x < (labyrinthe.width - 1)
+        // Et qu'il y a pas de mur
+        && (cellule.value & 0x1) == 0
+        // Et que ce n'est pas la cellule d'où on vient
+        && fromCellule.x != (cellule.x + 1)) {
+          labyrinthe.cellules[cellule.y][cellule.x + 1].parent = cellule;
+          this._setTreeTo(labyrinthe.cellules[cellule.y][cellule.x + 1], labyrinthe, cellule);
+    }
+    // S'il y une cellule en haut
+    if (cellule.y > 0
+        // Et qu'il y a pas de mur
+        && (cellule.value & 0x2) == 0
+        // Et que ce n'est pas la cellule d'où on vient
+        && fromCellule.y != (cellule.y - 1)) {
+          labyrinthe.cellules[cellule.y - 1][cellule.x].parent = cellule;
+          this._setTreeTo(labyrinthe.cellules[cellule.y - 1][cellule.x], labyrinthe, cellule);
+    }
+    // S'il y une cellule en bas
+    if (cellule.y < (labyrinthe.height - 1)
+        // Et qu'il y a pas de mur
+        && (cellule.value & 0x8) == 0
+        // Et que ce n'est pas la cellule d'où on vient
+        && fromCellule.y != (cellule.y + 1)) {
+          labyrinthe.cellules[cellule.y + 1][cellule.x].parent = cellule;
+          this._setTreeTo(labyrinthe.cellules[cellule.y + 1][cellule.x], labyrinthe, cellule);
+    }
+  }
+  this.fromCelluleToCellule = function(celluleStart, celluleEnd, labyrinthe) {
+    console.log('Resolution start')
+    this._setTreeTo(celluleEnd, labyrinthe, celluleEnd);
+    var cellule = celluleStart;
+    while (cellule != null) {
+      cellule.visited = true;
+      cellule = cellule.parent;
+    }
+    console.log('Resolution stop')
+  }
+});
+
+app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, comprehensiveExploration, resolve) {
 	console.log('Setting labyrinthe...');
 	var Labyrinthe = function() {
     this.width = 50;
@@ -345,6 +400,12 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       if (cellule.current) {
         cssClass = cssClass + " current";
       }
+      if (cellule.processed) {
+        cssClass = cssClass + " processed";
+      }
+      if (cellule.visited) {
+        cssClass = cssClass + " visited";
+      }
       return cssClass;
     }
   }
@@ -357,10 +418,19 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
   // $scope.$watch($scope.labyrinthe2.cellules, null, true);
 	// console.log('labyrinthe: ' + JSON.stringify($scope.labyrinthe));
 
-  var EventListener = function(randomWayFusion, labyrinthe, comprehensiveExploration, labyrinthe2) {
+  var EventListener = function(randomWayFusion, labyrinthe, comprehensiveExploration, labyrinthe2, resolve) {
+    var started = false;
     this.generate = function(labyrinthe, labyrinthe2) {
-      this.generateRandomWayFusion(labyrinthe);
-      this.generateComprehensiveExploration(labyrinthe2);
+      if (! started) {
+        started = true;
+        this.generateRandomWayFusion(labyrinthe);
+        this.generateComprehensiveExploration(labyrinthe2);
+      } else {
+        console.log('generation already started');
+      }
+    }
+    this.resolveLabyrinthe = function(labyrinthe) {
+      resolve.fromCelluleToCellule(labyrinthe.cellules[0][0], labyrinthe.cellules[labyrinthe.height - 1][labyrinthe.width - 1], labyrinthe);
     }
     this.generateComprehensiveExploration = function(labyrinthe) {
       function finish() {
@@ -385,7 +455,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       }, 0);
     }
   }
-  var eventListener = new EventListener(randomWayFusion, $scope.labyrinthe, comprehensiveExploration, $scope.labyrinthe2);
+  var eventListener = new EventListener(randomWayFusion, $scope.labyrinthe, comprehensiveExploration, $scope.labyrinthe2, resolve);
   $scope.listener = eventListener;
 });
 

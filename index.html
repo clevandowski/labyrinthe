@@ -4,19 +4,40 @@
 <script src="scripts/angular.js"></script>
 <body>
 <div ng-app="myApp" ng-controller="myCtrl">
-  <div style="display: inline-block; position: relative;">
-    <h1>
-      | <span ng-click="listener.generate(labyrinthe, labyrinthe2)">Generate</span> | 
-      <span ng-click="listener.generateQuick(labyrinthe, labyrinthe2)">Quick Generate</span> | 
-    </h1>
+  <form name="myForm">
+    <span>
+      <label>
+        Width: <input type="text" name="labyrinthe1Width" ng-model="labyrinthe.width" required>
+      </label>
+      <label>
+        Height: <input type="text" name="labyrinthe1Height" ng-model="labyrinthe.height" required>
+      </label>
+    </span>
+    <br>
+    <span>
+      <label>
+        Width: <input type="text" name="labyrinthe2Width" ng-model="labyrinthe2.width" required>
+      </label>
+      <label>
+        Height: <input type="text" name="labyrinthe2Height" ng-model="labyrinthe2.height" required>
+      </label>
+    </span>
+  </form>
+  <button ng-click="listener.init(labyrinthe, labyrinthe2)">initialization</button>
+
+  <h1 ng-show="labyrinthe.initialized">
+    <span ng-click="listener.generate(labyrinthe, labyrinthe2)">Generate</span> | 
+    <span ng-click="listener.generateQuick(labyrinthe, labyrinthe2)">Quick Generate</span> | 
+  </h1>
+  <div style="display: inline-block; position: relative;" ng-show="labyrinthe.initialized">
     <h2>
       <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Exploration_exhaustive">Exploration exhaustive</a>
     </h2>
     <h3>
-      | <span>Iteration {{labyrinthe2.iteration}}</span> |
-      <span ng-click="listener.resolveLabyrinthe(labyrinthe2)">Resolve</span> |
-      <span ng-click="listener.resolveQuickLabyrinthe(labyrinthe2)">Quick Resolve</span> |
-      <span>Steps: {{labyrinthe2.resolutionStep}}</span>
+      <span>| Iteration {{labyrinthe2.iteration}} |</span>
+      <span ng-show="labyrinthe2.generated" ng-click="listener.resolveLabyrinthe(labyrinthe2)">Resolve |</span>
+      <span ng-show="labyrinthe2.generated" ng-click="listener.resolveQuickLabyrinthe(labyrinthe2)">Quick Resolve |</span>
+      <span ng-show="labyrinthe2.generated">Steps: {{labyrinthe2.resolutionStep}} |</span>
     </h3>
     <div class="bordure" ">
       <div 
@@ -37,10 +58,10 @@
       <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins">Fusion aléatoire de chemins</a>
     </h2>
     <h3>
-      | <span>Iteration {{labyrinthe.iteration}}</span> |
-      <span ng-click="listener.resolveLabyrinthe(labyrinthe)">Resolve</span> |
-      <span ng-click="listener.resolveQuickLabyrinthe(labyrinthe)">Quick Resolve</span> |
-      <span>Steps: {{labyrinthe.resolutionStep}}</span>
+      <span>| Iteration {{labyrinthe.iteration}} |</span>
+      <span ng-show="labyrinthe.generated" ng-click="listener.resolveLabyrinthe(labyrinthe)">Resolve |</span>
+      <span ng-show="labyrinthe.generated" ng-click="listener.resolveQuickLabyrinthe(labyrinthe)">Quick Resolve |</span>
+      <span ng-show="labyrinthe.generated">Steps: {{labyrinthe.resolutionStep}} |</span>
     </h3>
     <div class="bordure">
       <div 
@@ -48,10 +69,11 @@
         class="line">
         <div 
           ng-repeat="cellule in ligne"
-          ng-class="labyrinthe.getCssClass(cellule)"><!-- {{cellule.zoneId}} --></div>
+          ng-class="labyrinthe.getCssClass(cellule)"><!-- {{cellule.zoneId}} -->
+        </div>
       </div>
     </div>
-  <div>
+  </div>
     <!-- <br/><br/> -->
 </div>
 <script type="text/javascript">
@@ -398,19 +420,30 @@ app.service('resolve', function() {
 app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, comprehensiveExploration, resolve) {
 	console.log('Setting labyrinthe...');
 	var Labyrinthe = function() {
-    this.width = 200;
-    this.height = 90;
+    this.initialized = false;
+    this.generated = false;
+    this.resolved = false;
     this.cellules = [];
-    for (var j = 0; j < this.height; j++) {
-      this.cellules[j] = [];
-      for (var i = 0; i < this.width; i++) {
-        this.cellules[j][i] = {
-          x: i,
-          y: j,
-          value: 0xF
+    this.width = 150;
+    this.height = 70;
+
+    this.init = function() {
+      console.log("width: " + this.width + ", height: " + this.height);
+      // this.width = _width;
+      // this.height = _height;
+      for (var j = 0; j < this.height; j++) {
+        this.cellules[j] = [];
+        for (var i = 0; i < this.width; i++) {
+          this.cellules[j][i] = {
+            x: i,
+            y: j,
+            value: 0xF
+          }
         }
       }
+      this.initialized = true;
     }
+
     this.getCssClass = function(cellule) {
       var cssClass = "cellule x" + cellule.value.toString(16).toUpperCase();
       if (cellule.current) {
@@ -426,16 +459,21 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
     }
   }
   $scope.labyrinthe = new Labyrinthe();
-  // $scope.$watch($scope.labyrinthe, null, true);
   $scope.labyrinthe2 = new Labyrinthe();
-  // $scope.$watch($scope.labyrinthe2.cellules[][].value);
-  randomWayFusion.init($scope.labyrinthe);
-  comprehensiveExploration.init($scope.labyrinthe2);
-  // $scope.$watch($scope.labyrinthe2.cellules, null, true);
+  // $scope.labyrinthe.init($scope.myForm.width, $scope.myForm.height);
+  // $scope.labyrinthe2.init($scope.myForm.width, $scope.myForm.height);
+  // randomWayFusion.init($scope.labyrinthe);
+  // comprehensiveExploration.init($scope.labyrinthe2);
 	// console.log('labyrinthe: ' + JSON.stringify($scope.labyrinthe));
 
   var EventListener = function(randomWayFusion, labyrinthe, comprehensiveExploration, labyrinthe2, resolve) {
     var started = false;
+    this.init = function(labyrinthe, labyrinthe2) {
+      labyrinthe.init();
+      labyrinthe2.init();
+      randomWayFusion.init(labyrinthe);
+      comprehensiveExploration.init(labyrinthe2);
+    }
     this.generate = function(labyrinthe, labyrinthe2) {
       if (! started) {
         started = true;
@@ -457,6 +495,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
     this.generateComprehensiveExploration = function(labyrinthe) {
       function finish() {
         clearInterval(intervalId);
+        labyrinthe.generated = true;
       }
       // On lance la génération en boucle en async pour qu'angularjs affiche bien le labyrinthe
       // au fur & à mesure de sa génération
@@ -468,6 +507,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
     this.generateRandomWayFusion = function(labyrinthe) {
       function finish() {
         clearInterval(intervalId);
+        labyrinthe.generated = true;
       }
       // On lance la génération en boucle en async pour qu'angularjs affiche bien le labyrinthe
       // au fur & à mesure de sa génération
@@ -480,6 +520,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       var finished = false;
       function finish() {
         finished = true;
+        labyrinthe.generated = true;
       }
       while (! finished) {
         comprehensiveExploration.generate(labyrinthe, finish);
@@ -489,6 +530,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       var finished = false;
       function finish() {
         finished = true;
+        labyrinthe.generated = true;
       }
       while (! finished) {
         randomWayFusion.generate(labyrinthe, finish);
@@ -500,6 +542,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       var cellule = celluleStart;
       function finish() {
         clearInterval(intervalId);
+        labyrinthe.resolved = true;
       }
       resolve.initEnd(celluleEnd, labyrinthe);
       var intervalId = setInterval(function() {
@@ -513,6 +556,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       var finished = false;
       function finish() {
         finished = true;
+        labyrinthe.resolved = true;
       }
       resolve.initEnd(celluleEnd, labyrinthe);
       while (! finished) {

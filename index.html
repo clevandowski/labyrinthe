@@ -6,13 +6,19 @@
 <div ng-app="myApp" ng-controller="myCtrl">
   <div style="display: inline-block; position: relative;">
     <h1>
-      <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Exploration_exhaustive">Exploration exhaustive</a>
+      | <span ng-click="listener.generate(labyrinthe, labyrinthe2)">Generate</span> | 
+      <span ng-click="listener.generateQuick(labyrinthe, labyrinthe2)">Quick Generate</span> | 
     </h1>
     <h2>
-      <span>Iteration {{labyrinthe2.iteration}}</span>
-      <span ng-click="listener.resolveLabyrinthe(labyrinthe2)">Resolve</span>
+      <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Exploration_exhaustive">Exploration exhaustive</a>
     </h2>
-    <div class="bordure" ng-click="listener.generate(labyrinthe, labyrinthe2)">
+    <h3>
+      | <span>Iteration {{labyrinthe2.iteration}}</span> |
+      <span ng-click="listener.resolveLabyrinthe(labyrinthe2)">Resolve</span> |
+      <span ng-click="listener.resolveQuickLabyrinthe(labyrinthe2)">Quick Resolve</span> |
+      <span>Steps: {{labyrinthe2.resolutionStep}}</span>
+    </h3>
+    <div class="bordure" ">
       <div 
         ng-repeat="ligne in labyrinthe2.cellules"
         class="line">
@@ -27,14 +33,16 @@
   </div>
   <!-- <br/><br/><br/> -->
   <div style="display: inline-block; position: relative;">
-    <h1>
-      <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins">Fusion aléatoire de chemins</a>
-    </h1>
     <h2>
-      <span>Iteration {{labyrinthe.iteration}}</span>
-      <span ng-click="listener.resolveLabyrinthe(labyrinthe)">Resolve</span>
+      <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins">Fusion aléatoire de chemins</a>
     </h2>
-    <div class="bordure" ng-click="listener.generate(labyrinthe, labyrinthe2)">
+    <h3>
+      | <span>Iteration {{labyrinthe.iteration}}</span> |
+      <span ng-click="listener.resolveLabyrinthe(labyrinthe)">Resolve</span> |
+      <span ng-click="listener.resolveQuickLabyrinthe(labyrinthe)">Quick Resolve</span> |
+      <span>Steps: {{labyrinthe.resolutionStep}}</span>
+    </h3>
+    <div class="bordure">
       <div 
         ng-repeat="ligne in labyrinthe.cellules"
         class="line">
@@ -336,7 +344,7 @@ app.service('resolve', function() {
         && (cellule.value & 0x4) == 0
         // Et que ce n'est pas la cellule d'où on vient
         && fromCellule.x != (cellule.x - 1)) {
-          labyrinthe.cellules[cellule.y][cellule.x - 1].parent = cellule;
+          labyrinthe.cellules[cellule.y][cellule.x - 1].nextCelluleToEnd = cellule;
           this._setTreeTo(labyrinthe.cellules[cellule.y][cellule.x - 1], labyrinthe, cellule);
     }
     // S'il y une cellule à droite
@@ -345,7 +353,7 @@ app.service('resolve', function() {
         && (cellule.value & 0x1) == 0
         // Et que ce n'est pas la cellule d'où on vient
         && fromCellule.x != (cellule.x + 1)) {
-          labyrinthe.cellules[cellule.y][cellule.x + 1].parent = cellule;
+          labyrinthe.cellules[cellule.y][cellule.x + 1].nextCelluleToEnd = cellule;
           this._setTreeTo(labyrinthe.cellules[cellule.y][cellule.x + 1], labyrinthe, cellule);
     }
     // S'il y une cellule en haut
@@ -354,7 +362,7 @@ app.service('resolve', function() {
         && (cellule.value & 0x2) == 0
         // Et que ce n'est pas la cellule d'où on vient
         && fromCellule.y != (cellule.y - 1)) {
-          labyrinthe.cellules[cellule.y - 1][cellule.x].parent = cellule;
+          labyrinthe.cellules[cellule.y - 1][cellule.x].nextCelluleToEnd = cellule;
           this._setTreeTo(labyrinthe.cellules[cellule.y - 1][cellule.x], labyrinthe, cellule);
     }
     // S'il y une cellule en bas
@@ -363,27 +371,35 @@ app.service('resolve', function() {
         && (cellule.value & 0x8) == 0
         // Et que ce n'est pas la cellule d'où on vient
         && fromCellule.y != (cellule.y + 1)) {
-          labyrinthe.cellules[cellule.y + 1][cellule.x].parent = cellule;
+          labyrinthe.cellules[cellule.y + 1][cellule.x].nextCelluleToEnd = cellule;
           this._setTreeTo(labyrinthe.cellules[cellule.y + 1][cellule.x], labyrinthe, cellule);
     }
   }
-  this.fromCelluleToCellule = function(celluleStart, celluleEnd, labyrinthe) {
-    console.log('Resolution start')
+  this.initEnd = function(celluleEnd, labyrinthe) {
+    console.log('Resolution initialization start');
     this._setTreeTo(celluleEnd, labyrinthe, celluleEnd);
-    var cellule = celluleStart;
-    while (cellule != null) {
+    labyrinthe.resolutionStep = 0;
+    console.log('Resolution initialization stop');
+  }
+  this.fromCellule = function(cellule, finish, labyrinthe) {
+    console.log('Resolution start')
+    if (cellule != null) {
       cellule.visited = true;
-      cellule = cellule.parent;
+      cellule = cellule.nextCelluleToEnd;
+      labyrinthe.resolutionStep++;
+    } else {
+      console.log('Resolution finished')
+      finish();
     }
-    console.log('Resolution stop')
+    return cellule;
   }
 });
 
 app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, comprehensiveExploration, resolve) {
 	console.log('Setting labyrinthe...');
 	var Labyrinthe = function() {
-    this.width = 50;
-    this.height = 50;
+    this.width = 200;
+    this.height = 90;
     this.cellules = [];
     for (var j = 0; j < this.height; j++) {
       this.cellules[j] = [];
@@ -429,8 +445,14 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
         console.log('generation already started');
       }
     }
-    this.resolveLabyrinthe = function(labyrinthe) {
-      resolve.fromCelluleToCellule(labyrinthe.cellules[0][0], labyrinthe.cellules[labyrinthe.height - 1][labyrinthe.width - 1], labyrinthe);
+    this.generateQuick = function(labyrinthe, labyrinthe2) {
+      if (! started) {
+        started = true;
+        this.generateQuickRandomWayFusion(labyrinthe);
+        this.generateQuickComprehensiveExploration(labyrinthe2);
+      } else {
+        console.log('generation already started');
+      }
     }
     this.generateComprehensiveExploration = function(labyrinthe) {
       function finish() {
@@ -439,20 +461,63 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       // On lance la génération en boucle en async pour qu'angularjs affiche bien le labyrinthe
       // au fur & à mesure de sa génération
       // Quand c'est fini la callback "finish" arrête la boucle
-      var intervalId = setInterval(function() { 
-        $scope.$evalAsync(comprehensiveExploration.generate(labyrinthe, finish)) 
+      var intervalId = setInterval(function() {
+        $scope.$evalAsync(comprehensiveExploration.generate(labyrinthe, finish));
       }, 0);
     }
     this.generateRandomWayFusion = function(labyrinthe) {
       function finish() {
-        clearInterval(intervalRandomWayFusion);
+        clearInterval(intervalId);
       }
       // On lance la génération en boucle en async pour qu'angularjs affiche bien le labyrinthe
       // au fur & à mesure de sa génération
       // Quand c'est fini la callback "finish" arrête la boucle
-      var intervalRandomWayFusion = setInterval(function() { 
+      var intervalId = setInterval(function() {
         $scope.$evalAsync(randomWayFusion.generate(labyrinthe, finish)) 
       }, 0);
+    }
+    this.generateQuickComprehensiveExploration = function(labyrinthe) {
+      var finished = false;
+      function finish() {
+        finished = true;
+      }
+      while (! finished) {
+        comprehensiveExploration.generate(labyrinthe, finish);
+      }
+    }
+    this.generateQuickRandomWayFusion = function(labyrinthe) {
+      var finished = false;
+      function finish() {
+        finished = true;
+      }
+      while (! finished) {
+        randomWayFusion.generate(labyrinthe, finish);
+      }
+    }
+    this.resolveLabyrinthe = function(labyrinthe) {
+      var celluleStart = labyrinthe.cellules[0][0];
+      var celluleEnd = labyrinthe.cellules[labyrinthe.height - 1][labyrinthe.width - 1];
+      var cellule = celluleStart;
+      function finish() {
+        clearInterval(intervalId);
+      }
+      resolve.initEnd(celluleEnd, labyrinthe);
+      var intervalId = setInterval(function() {
+        $scope.$evalAsync(cellule = resolve.fromCellule(cellule, finish, labyrinthe));
+      }, 0);
+    }
+    this.resolveQuickLabyrinthe = function(labyrinthe) {
+      var celluleStart = labyrinthe.cellules[0][0];
+      var celluleEnd = labyrinthe.cellules[labyrinthe.height - 1][labyrinthe.width - 1];
+      var cellule = celluleStart;
+      var finished = false;
+      function finish() {
+        finished = true;
+      }
+      resolve.initEnd(celluleEnd, labyrinthe);
+      while (! finished) {
+        cellule = resolve.fromCellule(cellule, finish, labyrinthe);
+      }
     }
   }
   var eventListener = new EventListener(randomWayFusion, $scope.labyrinthe, comprehensiveExploration, $scope.labyrinthe2, resolve);

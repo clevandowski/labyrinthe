@@ -48,7 +48,8 @@
         class="line">
         <div 
           ng-repeat="cellule in ligne"
-          ng-class="labyrinthe2.getCssClass(cellule)"><!--{{cellule.processed}}--></div>
+          ng-class="labyrinthe2.getCssClass(cellule)"
+          style="width: {{labyrinthe2.cssSize}}px; height: {{labyrinthe2.cssSize}}px;"><!--{{cellule.processed}}--></div>
       </div>
     </div>
   </div>
@@ -74,7 +75,8 @@
         class="line">
         <div 
           ng-repeat="cellule in ligne"
-          ng-class="labyrinthe.getCssClass(cellule)"><!-- {{cellule.zoneId}} -->
+          ng-class="labyrinthe.getCssClass(cellule)"
+          style="width: {{labyrinthe.cssSize}}px; height: {{labyrinthe.cssSize}}px;"><!-- {{cellule.zoneId}} -->
         </div>
       </div>
     </div>
@@ -503,9 +505,6 @@ app.service('resolve', function() {
     var targetCellule = cellule;
     cellule.nextCelluleToEnd = cellule;
     cellule.direction = 0;
-    // cellule.nbDirectionChecked = 0; // On va tout de suite tester la 1ere direction
-    // cellule.direction = direction;
-    // cellule.isfirstIteration = true;
     while (cellule != null) {
       var nextCellule = null;
       // Si la cellule courante n'a pas encore été parcourue
@@ -597,7 +596,10 @@ app.service('resolve', function() {
 
 app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, comprehensiveExploration, resolve) {
 	console.log('Setting labyrinthe...');
-	var Labyrinthe = function() {
+  var windowsWidth = window.innerWidth;
+  var windowsHeight = window.innerHeight;
+  console.log("windowsWidth: " + windowsWidth + ", windowsHeight:" + windowsHeight);
+	var Labyrinthe = function(windowsWidth, windowsHeight) {
     this.initializing = false;
     this.initialized = false;
     this.generating = false;
@@ -605,14 +607,18 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
     this.resolving = false;
     this.resolved = false;
     this.cellules = [];
-    // this.width = 150;
-    // this.height = 70;
     this.width = 50;
     this.height = 50;
 
     this.init = function() {
       this.initializing = true;
-      console.log("width: " + this.width + ", height: " + this.height);
+      var wWidth = windowsWidth - 40;
+      var nbCellule = parseInt(this.width, 10);
+      this.cssSize = (wWidth / nbCellule) - 2;
+      if (this.cssSize < 1) this.cssSize = 1;
+      console.log("width: " + this.width + ", height: " + this.height + ", cssSize: " + this.cssSize);
+      console.log("windowsWidth: " + windowsWidth + ", windowsHeight:" + windowsHeight);
+      // console.log("wWidth: " + wWidth + ", nbCellule:" + nbCellule);
       for (var j = 0; j < this.height; j++) {
         this.cellules[j] = [];
         for (var i = 0; i < this.width; i++) {
@@ -641,13 +647,8 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       return cssClass;
     }
   }
-  $scope.labyrinthe = new Labyrinthe();
-  $scope.labyrinthe2 = new Labyrinthe();
-  // $scope.labyrinthe.init($scope.myForm.width, $scope.myForm.height);
-  // $scope.labyrinthe2.init($scope.myForm.width, $scope.myForm.height);
-  // randomWayFusion.init($scope.labyrinthe);
-  // comprehensiveExploration.init($scope.labyrinthe2);
-	// console.log('labyrinthe: ' + JSON.stringify($scope.labyrinthe));
+  $scope.labyrinthe = new Labyrinthe(windowsWidth, windowsHeight);
+  $scope.labyrinthe2 = new Labyrinthe(windowsWidth, windowsHeight);
 
   var EventListener = function(randomWayFusion, labyrinthe, comprehensiveExploration, labyrinthe2, resolve) {
     var started = false;

@@ -38,7 +38,8 @@
       <span>| Iteration {{labyrinthe2.iteration}} |</span>
       <button ng-show="labyrinthe2.generated" ng-click="listener.resolveLabyrinthe(labyrinthe2)">Resolve</button>
       <button ng-show="labyrinthe2.generated" ng-click="listener.resolveQuickLabyrinthe(labyrinthe2)">Quick Resolve</button>
-      <span ng-show="labyrinthe2.generated">| Steps: {{labyrinthe2.resolutionStep}} |</span>
+      <span ng-show="labyrinthe2.generated">| Generation duration: {{labyrinthe2.generationDuration}}ms |</span>
+      <span ng-show="labyrinthe2.resolved"> Steps: {{labyrinthe2.resolutionStep}} | Resolution duration: {{labyrinthe2.resolutionDuration}}ms |</span>
       <span ng-show="labyrinthe2.generating">Generation in progress...</span>
       <span ng-show="labyrinthe2.resolving">Resolving in progress...</span>
     </h3>
@@ -65,7 +66,8 @@
       <span>| Iteration {{labyrinthe.iteration}} |</span>
       <button ng-show="labyrinthe.generated" ng-click="listener.resolveLabyrinthe(labyrinthe)">Resolve</button>
       <button ng-show="labyrinthe.generated" ng-click="listener.resolveQuickLabyrinthe(labyrinthe)">Quick Resolve</button>
-      <span ng-show="labyrinthe.generated">| Steps: {{labyrinthe.resolutionStep}} |</span>
+      <span ng-show="labyrinthe.generated">| Generation duration: {{labyrinthe.generationDuration}}ms |</span>
+      <span ng-show="labyrinthe.resolved">Steps: {{labyrinthe.resolutionStep}} | Resolution duration: {{labyrinthe.resolutionDuration}}ms |</span>
       <span ng-show="labyrinthe.generating">Generation in progress...</span>
       <span ng-show="labyrinthe.resolving">Resolving in progress...</span>
     </h3>
@@ -314,6 +316,7 @@ app.service('randomWayFusion', function() {
           // console.log('cellule:' + JSON.stringify(cellule) + ' to zoneId: ' + zoneTop.id);
           cellule.zoneId = zoneTop.id;
         }
+        // zoneBottom.cellules.map(cellule => cellule.zoneId = zoneTop.id);
         zoneTop.cellules = zoneTop.cellules.concat(zoneBottom.cellules);
 
         // On supprime le mur du bas (0x8) de la cellule du haut...
@@ -330,6 +333,7 @@ app.service('randomWayFusion', function() {
           // console.log('cellule:' + JSON.stringify(cellule) + ' to zoneId: ' + zoneLeft.id);
           cellule.zoneId = zoneLeft.id;
         }
+        // zoneRight.cellules.map(cellule => cellule.zoneId = zoneLeft.id);
         zoneLeft.cellules = zoneLeft.cellules.concat(zoneRight.cellules);
         // On supprime le mur de droite (0x1) de la cellule de gauche...
         wallToDelete.celluleLeft.value = wallToDelete.celluleLeft.value & 0xE;
@@ -508,7 +512,7 @@ app.service('resolve', function() {
     while (cellule != null) {
       var nextCellule = null;
       // Si la cellule courante n'a pas encore été parcourue
-      console.log("Direction: " + direction);
+      // console.log("Direction: " + direction);
       // console.log("Cellule before iteration: { x: " + cellule.x + ", y:" + cellule.y + ", value: " + cellule.value + ", direction: " + cellule.direction + ", canGoRight:" + cellule.canGoRight + ", canGoFront: " + cellule.canGoFront, ", canGoLeft: " + cellule.canGoLeft + ", canGoBack: " + cellule.canGoBack + " }");
       if (cellule.direction == 0) {
         cellule.direction = direction;
@@ -521,39 +525,39 @@ app.service('resolve', function() {
 
       // Si on peut aller vers la cellule à droite (relativement à la direction)
       if (cellule.canGoRight) {
-        console.log("Go to right");
+        // console.log("Go to right");
         direction = this._turnRight(direction);
         nextCellule = this._getCelluleInDirection(cellule, labyrinthe, direction);
         nextCellule.nextCelluleToEnd = cellule;
         nextCellule.direction = 0;
         cellule.canGoRight = false;
         if (cellule.canGoFront || cellule.canGoLeft || cellule.canGoBack) {
-          console.log("Push cellule to process remaining path later");
+          // console.log("Push cellule to process remaining path later");
           remainingCellules.push(cellule);
         }
       } else if (cellule.canGoFront) {
-        console.log("Go to front");
+        // console.log("Go to front");
         nextCellule = this._getCelluleInDirection(cellule, labyrinthe, direction);
         nextCellule.nextCelluleToEnd = cellule;
         nextCellule.direction = 0;
         cellule.canGoFront = false;
         if (cellule.canGoLeft || cellule.canGoBack) {
-          console.log("Push cellule to process remaining path later");
+          // console.log("Push cellule to process remaining path later");
           remainingCellules.push(cellule);
         }
       } else if (cellule.canGoLeft) {
-        console.log("Go to left");
+        // console.log("Go to left");
         direction = this._turnLeft(direction);
         nextCellule = this._getCelluleInDirection(cellule, labyrinthe, direction);
         nextCellule.nextCelluleToEnd = cellule;
         nextCellule.direction = 0;
         cellule.canGoLeft = false;
         if (cellule.canGoBack) {
-          console.log("Push cellule to process remaining path later");
+          // console.log("Push cellule to process remaining path later");
           remainingCellules.push(cellule);
         }
       } else if (cellule.canGoBack) {
-        console.log("Go to back");
+        // console.log("Go to back");
         direction = this._turnLeft(direction);
         direction = this._turnLeft(direction);
         nextCellule = this._getCelluleInDirection(cellule, labyrinthe, direction);
@@ -561,13 +565,13 @@ app.service('resolve', function() {
         nextCellule.direction = 0;
         cellule.canGoBack = false;
       } else {
-        console.log("Dead end, poping cellule in remaining list");
+        // console.log("Dead end, poping cellule in remaining list");
         nextCellule = remainingCellules.pop();
         if (nextCellule != null) {
           direction = nextCellule.direction;
         }
       }
-      console.log("Cellule after iteration: { x: " + cellule.x + ", y:" + cellule.y + ", value: " + cellule.value + ", direction: " + cellule.direction + ", canGoRight:" + cellule.canGoRight + ", canGoFront: " + cellule.canGoFront, ", canGoLeft: " + cellule.canGoLeft + ", canGoBack: " + cellule.canGoBack + " }");
+      // console.log("Cellule after iteration: { x: " + cellule.x + ", y:" + cellule.y + ", value: " + cellule.value + ", direction: " + cellule.direction + ", canGoRight:" + cellule.canGoRight + ", canGoFront: " + cellule.canGoFront, ", canGoLeft: " + cellule.canGoLeft + ", canGoBack: " + cellule.canGoBack + " }");
       cellule = nextCellule;
     }
     targetCellule.nextCelluleToEnd = null;
@@ -581,13 +585,11 @@ app.service('resolve', function() {
     console.log('Resolution initialization stop');
   }
   this.fromCellule = function(cellule, finish, labyrinthe) {
-    console.log('Resolution start')
     if (cellule != null) {
       cellule.visited = true;
       cellule = cellule.nextCelluleToEnd;
       labyrinthe.resolutionStep++;
     } else {
-      console.log('Resolution finished')
       finish();
     }
     return cellule;
@@ -612,7 +614,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
 
     this.init = function() {
       this.initializing = true;
-      var wWidth = windowsWidth - 40;
+      var wWidth = windowsWidth - 30;
       var nbCellule = parseInt(this.width, 10);
       this.cssSize = (wWidth / nbCellule) - 2;
       if (this.cssSize < 1) this.cssSize = 1;
@@ -672,8 +674,17 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       if (! started) {
         started = true;
         labyrinthe.generating = true;
+        var startTime = Date.now();
         this.generateQuickRandomWayFusion(labyrinthe);
+        var endTime = Date.now();
+        labyrinthe.generationDuration = endTime - startTime;
+        console.log("Random Way Fusion generation duration: " + labyrinthe.generationDuration + "ms");
+
+        startTime = Date.now();
         this.generateQuickComprehensiveExploration(labyrinthe2);
+        endTime = Date.now();
+        labyrinthe2.generationDuration = endTime - startTime;
+        console.log("Comprehensive Exploration generation duration: " + labyrinthe2.generationDuration + "ms");
       } else {
         console.log('generation already started');
       }
@@ -710,6 +721,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
         finished = true;
         labyrinthe.generating = false;
         labyrinthe.generated = true;
+        console.log('generateQuickComprehensiveExploration finished');
       }
       while (! finished) {
         comprehensiveExploration.generate(labyrinthe, finish);
@@ -734,8 +746,10 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
         clearInterval(intervalId);
         labyrinthe.resolving = false;
         labyrinthe.resolved = true;
+        console.log('Resolution finished')
       }
       labyrinthe.resolving = true;
+      console.log('Resolution start')
       resolve.initEnd(celluleEnd, labyrinthe);
       var intervalId = setInterval(function() {
         $scope.$evalAsync(cellule = resolve.fromCellule(cellule, finish, labyrinthe));
@@ -750,12 +764,25 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
         finished = true;
         labyrinthe.resolving = false;
         labyrinthe.resolved = true;
+        console.log('Resolution finished')
       }
       labyrinthe.resolving = true;
+      console.log('Resolution start')
+      var startTime = Date.now();
+      var startTimeInitialization = startTime;
       resolve.initEnd(celluleEnd, labyrinthe);
+      var endTimeInitialization = Date.now();
+      console.log("Labyrinthe resolution initialization duration: " + (endTimeInitialization - startTimeInitialization) + "ms");
+
+      var startTimeCrawl = endTimeInitialization;
       while (! finished) {
         cellule = resolve.fromCellule(cellule, finish, labyrinthe);
       }
+      var endTime = Date.now();
+      var endTimeCrawl = endTime;
+      labyrinthe.resolutionDuration = endTime - startTime;
+      console.log("Labyrinthe resolution crawling duration: " + (endTimeCrawl - startTimeCrawl) + "ms");
+      console.log("Labyrinthe resolution duration: " + labyrinthe.resolutionDuration + "ms");
     }
   }
   var eventListener = new EventListener(randomWayFusion, $scope.labyrinthe, comprehensiveExploration, $scope.labyrinthe2, resolve);

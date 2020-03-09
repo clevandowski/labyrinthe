@@ -23,14 +23,14 @@
       </label>
     </span>
   <!-- </form> -->
-  <button ng-click="listener.init(labyrinthe, labyrinthe2)">Initialization</button>
+  <!-- <button ng-click="listener.init(labyrinthe, labyrinthe2)">Initialization</button> -->
   <span ng-show="labyrinthe.initializing">Initialization in progress...</span>
 
-  <h1 ng-show="labyrinthe.initialized">
+  <h1>
     <button ng-click="listener.generate(labyrinthe, labyrinthe2)">Generate</button>
     <button ng-click="listener.generateQuick(labyrinthe, labyrinthe2)">Quick Generate</button>
   </h1>
-  <div style="display: inline-block; position: relative;" ng-show="labyrinthe.initialized">
+  <div style="display: inline-block; position: relative;">
     <h2>
       <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Exploration_exhaustive">Exploration exhaustive</a>
     </h2>
@@ -54,11 +54,11 @@
       </div>
     </div>
   </div>
-  <div style="display: inline-block; position: relative;" ng-show="labyrinthe.initialized">
+  <div style="display: inline-block; position: relative;">
     <h1>VS</h1>
   </div>
   <!-- <br/><br/><br/> -->
-  <div style="display: inline-block; position: relative;" ng-show="labyrinthe.initialized">
+  <div style="display: inline-block; position: relative;">
     <h2>
       <a href="https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins">Fusion aléatoire de chemins</a>
     </h2>
@@ -613,6 +613,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
     this.height = 50;
 
     this.init = function() {
+      var startTime = Date.now();
       this.initializing = true;
       var wWidth = windowsWidth - 30;
       var nbCellule = parseInt(this.width, 10);
@@ -631,6 +632,9 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
           }
         }
       }
+      var endTime = Date.now();
+      this.generationInitialization = endTime - startTime;
+      console.log("Labyrinthe initialization duration: " + this.generationInitialization + "ms");
       this.initializing = false;
       this.initialized = true;
     }
@@ -655,15 +659,16 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
   var EventListener = function(randomWayFusion, labyrinthe, comprehensiveExploration, labyrinthe2, resolve) {
     var started = false;
     this.init = function(labyrinthe, labyrinthe2) {
-      labyrinthe.init();
-      labyrinthe2.init();
-      randomWayFusion.init(labyrinthe);
-      comprehensiveExploration.init(labyrinthe2);
+      console.log("Initialization...")
     }
     this.generate = function(labyrinthe, labyrinthe2) {
       if (! started) {
         started = true;
         labyrinthe.generating = true;
+        labyrinthe.init();
+        labyrinthe2.init();
+        randomWayFusion.init(labyrinthe);
+        comprehensiveExploration.init(labyrinthe2);
         this.generateRandomWayFusion(labyrinthe);
         this.generateComprehensiveExploration(labyrinthe2);
       } else {
@@ -674,6 +679,10 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       if (! started) {
         started = true;
         labyrinthe.generating = true;
+        labyrinthe.init();
+        labyrinthe2.init();
+        randomWayFusion.init(labyrinthe);
+        comprehensiveExploration.init(labyrinthe2);
         var startTime = Date.now();
         this.generateQuickRandomWayFusion(labyrinthe);
         var endTime = Date.now();

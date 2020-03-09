@@ -39,18 +39,18 @@
       <button ng-show="labyrinthe2.generated" ng-click="listener.resolveLabyrinthe(labyrinthe2)">Resolve</button>
       <button ng-show="labyrinthe2.generated" ng-click="listener.resolveQuickLabyrinthe(labyrinthe2)">Quick Resolve</button>
       <span ng-show="labyrinthe2.generated">| Generation duration: {{labyrinthe2.generationDuration}}ms |</span>
-      <span ng-show="labyrinthe2.resolved"> Steps: {{labyrinthe2.resolutionStep}} | Resolution duration: {{labyrinthe2.resolutionDuration}}ms |</span>
+      <span ng-show="labyrinthe2.generated"> Steps: {{labyrinthe2.resolutionStep}} | Resolution duration: {{labyrinthe2.resolutionDuration}}ms |</span>
       <span ng-show="labyrinthe2.generating">Generation in progress...</span>
       <span ng-show="labyrinthe2.resolving">Resolving in progress...</span>
     </h3>
-    <div class="bordure">
+    <div class="bordure" style="width: {{comprehensiveExplorationLabyrinthe.width * (comprehensiveExplorationLabyrinthe.cssSize + 2)}}px;">
       <div 
-        ng-repeat="ligne in labyrinthe2.cellules"
+        ng-repeat="ligne in comprehensiveExplorationLabyrinthe.cellules"
         class="line">
         <div 
           ng-repeat="cellule in ligne"
-          ng-class="labyrinthe2.getCssClass(cellule)"
-          style="width: {{labyrinthe2.cssSize}}px; height: {{labyrinthe2.cssSize}}px;"><!--{{cellule.processed}}--></div>
+          ng-class="comprehensiveExplorationLabyrinthe.getCssClass(cellule)"
+          style="width: {{comprehensiveExplorationLabyrinthe.cssSize}}px; height: {{comprehensiveExplorationLabyrinthe.cssSize}}px;"><!--{{cellule.processed}}--></div>
       </div>
     </div>
   </div>
@@ -67,18 +67,18 @@
       <button ng-show="labyrinthe.generated" ng-click="listener.resolveLabyrinthe(labyrinthe)">Resolve</button>
       <button ng-show="labyrinthe.generated" ng-click="listener.resolveQuickLabyrinthe(labyrinthe)">Quick Resolve</button>
       <span ng-show="labyrinthe.generated">| Generation duration: {{labyrinthe.generationDuration}}ms |</span>
-      <span ng-show="labyrinthe.resolved">Steps: {{labyrinthe.resolutionStep}} | Resolution duration: {{labyrinthe.resolutionDuration}}ms |</span>
+      <span ng-show="labyrinthe.generated">Steps: {{labyrinthe.resolutionStep}} | Resolution duration: {{labyrinthe.resolutionDuration}}ms |</span>
       <span ng-show="labyrinthe.generating">Generation in progress...</span>
       <span ng-show="labyrinthe.resolving">Resolving in progress...</span>
     </h3>
     <div class="bordure">
       <div 
-        ng-repeat="ligne in labyrinthe.cellules"
+        ng-repeat="ligne in randomWayFusionLabyrinthe.cellules"
         class="line">
         <div 
           ng-repeat="cellule in ligne"
-          ng-class="labyrinthe.getCssClass(cellule)"
-          style="width: {{labyrinthe.cssSize}}px; height: {{labyrinthe.cssSize}}px;"><!-- {{cellule.zoneId}} -->
+          ng-class="randomWayFusionLabyrinthe.getCssClass(cellule)"
+          style="width: {{randomWayFusionLabyrinthe.cssSize}}px; height: {{randomWayFusionLabyrinthe.cssSize}}px;"><!-- {{cellule.zoneId}} -->
         </div>
       </div>
     </div>
@@ -303,69 +303,65 @@ app.service('randomWayFusion', function() {
     // Nombre d'itérations: labyrinthe.width * labyrinthe.height - 1
     // Ou sinon lorsqu'il ne reste plus qu'une seule zone
     // for (var i = 0; i < (labyrinthe.width * labyrinthe.height - 1); i++) {
-    if (walls.length > 0) {
+    // if (walls.length > 0) {
+    if (labyrinthe.iteration < (labyrinthe.width * labyrinthe.height - 1)) {
       var wallIdToDelete = Math.floor(Math.random() * walls.length);
       // console.log('remaing walls: ' + walls.length + ', wallIdToDelete: ' + walls[wallIdToDelete].id);
       var wallToDelete = walls[wallIdToDelete];
       if (wallToDelete.type == "h") {
-        // Les cellules de la zone du bas sont recopiées dans la zone du haut
-        var zoneTop = zones[wallToDelete.celluleTop.zoneId];
-        var zoneBottom = zones[wallToDelete.celluleBottom.zoneId];
-        for (var j = 0; j < zoneBottom.cellules.length; j++) {
-          var cellule = zoneBottom.cellules[j];
-          // console.log('cellule:' + JSON.stringify(cellule) + ' to zoneId: ' + zoneTop.id);
-          cellule.zoneId = zoneTop.id;
+        // On ne supprime pas le mur mais on l'enlève de la liste des murs à supprimer
+        if (wallToDelete.celluleTop.zoneId != wallToDelete.celluleBottom.zoneId) {
+          // Les cellules de la zone du bas sont recopiées dans la zone du haut si la zone du bas a le moins de cellules
+          var zoneTop = zones[wallToDelete.celluleTop.zoneId];
+          var zoneBottom = zones[wallToDelete.celluleBottom.zoneId];
+          if (zoneTop.cellules.length > zoneBottom.cellules.length) {
+            for (var j = 0; j < zoneBottom.cellules.length; j++) {
+              zoneBottom.cellules[j].zoneId = wallToDelete.celluleTop.zoneId;
+            }
+            zoneTop.cellules = zoneTop.cellules.concat(zoneBottom.cellules);
+          } else {
+            // Et inversement Les cellules de la zone du haut sont recopiées dans la zone du bas si la zone du haut a le moins de cellules
+            for (var j = 0; j < zoneTop.cellules.length; j++) {
+              zoneTop.cellules[j].zoneId = wallToDelete.celluleBottom.zoneId;
+            }
+            zoneBottom.cellules = zoneBottom.cellules.concat(zoneTop.cellules);
+          }
+          // On supprime le mur du bas (0x8) de la cellule du haut...
+          wallToDelete.celluleTop.value = wallToDelete.celluleTop.value & 0x7;
+          // ... et le mur du haut (0x2) de la cellule du bas...
+          wallToDelete.celluleBottom.value = wallToDelete.celluleBottom.value & 0xD;
+          labyrinthe.iteration++;
         }
-        // zoneBottom.cellules.map(cellule => cellule.zoneId = zoneTop.id);
-        zoneTop.cellules = zoneTop.cellules.concat(zoneBottom.cellules);
-
-        // On supprime le mur du bas (0x8) de la cellule du haut...
-        wallToDelete.celluleTop.value = wallToDelete.celluleTop.value & 0x7;
-        // ... et le mur du haut (0x2) de la cellule du bas...
-        wallToDelete.celluleBottom.value = wallToDelete.celluleBottom.value & 0xD;
       }
       if (wallToDelete.type == "v") {
-        // Les cellules de la zone de droite sont recopiées dans la zone de gauche
-        var zoneLeft = zones[wallToDelete.celluleLeft.zoneId];
-        var zoneRight = zones[wallToDelete.celluleRight.zoneId];
-        for (var j = 0; j < zoneRight.cellules.length; j++) {
-          var cellule = zoneRight.cellules[j];
-          // console.log('cellule:' + JSON.stringify(cellule) + ' to zoneId: ' + zoneLeft.id);
-          cellule.zoneId = zoneLeft.id;
+        if (wallToDelete.celluleLeft.zoneId != wallToDelete.celluleRight.zoneId) {
+          // Les cellules de la zone du bas sont recopiées dans la zone du haut si la zone du bas a le moins de cellules
+          var zoneLeft = zones[wallToDelete.celluleLeft.zoneId];
+          var zoneRight = zones[wallToDelete.celluleRight.zoneId];
+          if (zoneLeft.cellules.length > zoneRight.cellules.length) {
+            for (var j = 0; j < zoneRight.cellules.length; j++) {
+              zoneRight.cellules[j].zoneId = wallToDelete.celluleLeft.zoneId;
+            }
+            zoneLeft.cellules = zoneLeft.cellules.concat(zoneRight.cellules);
+          } else {
+            for (var j = 0; j < zoneLeft.cellules.length; j++) {
+              zoneLeft.cellules[j].zoneId = wallToDelete.celluleRight.zoneId;
+            }
+            zoneRight.cellules = zoneRight.cellules.concat(zoneLeft.cellules);
+          }
+          // On supprime le mur de droite (0x1) de la cellule de gauche...
+          wallToDelete.celluleLeft.value = wallToDelete.celluleLeft.value & 0xE;
+          // ... et le mur de gauche (0x4) de la cellule du droite...
+          wallToDelete.celluleRight.value = wallToDelete.celluleRight.value & 0xB;
+          labyrinthe.iteration++;
         }
-        // zoneRight.cellules.map(cellule => cellule.zoneId = zoneLeft.id);
-        zoneLeft.cellules = zoneLeft.cellules.concat(zoneRight.cellules);
-        // On supprime le mur de droite (0x1) de la cellule de gauche...
-        wallToDelete.celluleLeft.value = wallToDelete.celluleLeft.value & 0xE;
-        // ... et le mur de gauche (0x4) de la cellule du droite...
-        wallToDelete.celluleRight.value = wallToDelete.celluleRight.value & 0xB;
       }
       // On supprime le mur de la liste des murs
       walls.splice(walls.indexOf(wallToDelete), 1);
-      // On n'a plus besoin de gérer la suppression des murs entre 2 cellules d'une même zone
-      // Donc on retient uniquement les murs entre 2 zones distinctes
-      var remainingWalls = [];
-      for (var j = 0; j < walls.length; j++) {
-        var wall = walls[j];
-        if (wall.type == "h") {
-          if (wall.celluleTop.zoneId != wall.celluleBottom.zoneId) {
-            remainingWalls.push(wall);
-          }
-        }
-        if (wall.type == "v") {
-          if (wall.celluleLeft.zoneId != wall.celluleRight.zoneId) {
-            remainingWalls.push(wall);
-          }
-        }
-      }
-      labyrinthe.walls = remainingWalls;
-      // $scope.$apply();
     } else {
       console.log('randomWayFusion finished');
       finish();
     }
-    // return labyrinthe;
-    labyrinthe.iteration++;
   }
 });
 
@@ -618,7 +614,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       var wWidth = windowsWidth - 30;
       var nbCellule = parseInt(this.width, 10);
       this.cssSize = (wWidth / nbCellule) - 2;
-      if (this.cssSize < 1) this.cssSize = 1;
+      if (this.cssSize < 4) this.cssSize = 4;
       console.log("width: " + this.width + ", height: " + this.height + ", cssSize: " + this.cssSize);
       console.log("windowsWidth: " + windowsWidth + ", windowsHeight:" + windowsHeight);
       // console.log("wWidth: " + wWidth + ", nbCellule:" + nbCellule);
@@ -655,6 +651,8 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
   }
   $scope.labyrinthe = new Labyrinthe(windowsWidth, windowsHeight);
   $scope.labyrinthe2 = new Labyrinthe(windowsWidth, windowsHeight);
+  // var labyrinthe = new Labyrinthe(windowsWidth, windowsHeight);
+  // var labyrinthe2 = new Labyrinthe(windowsWidth, windowsHeight);
 
   var EventListener = function(randomWayFusion, labyrinthe, comprehensiveExploration, labyrinthe2, resolve) {
     var started = false;
@@ -663,12 +661,16 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
     }
     this.generate = function(labyrinthe, labyrinthe2) {
       if (! started) {
+        // $scope.labyrinthe = labyrinthe;
+        // $scope.labyrinthe2 = labyrinthe2;
         started = true;
         labyrinthe.generating = true;
         labyrinthe.init();
         labyrinthe2.init();
         randomWayFusion.init(labyrinthe);
         comprehensiveExploration.init(labyrinthe2);
+        $scope.randomWayFusionLabyrinthe = labyrinthe;
+        $scope.comprehensiveExplorationLabyrinthe = labyrinthe2;
         this.generateRandomWayFusion(labyrinthe);
         this.generateComprehensiveExploration(labyrinthe2);
       } else {
@@ -693,6 +695,8 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
         this.generateQuickComprehensiveExploration(labyrinthe2);
         endTime = Date.now();
         labyrinthe2.generationDuration = endTime - startTime;
+        $scope.randomWayFusionLabyrinthe = labyrinthe;
+        $scope.comprehensiveExplorationLabyrinthe = labyrinthe2;
         console.log("Comprehensive Exploration generation duration: " + labyrinthe2.generationDuration + "ms");
       } else {
         console.log('generation already started');
@@ -795,6 +799,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
     }
   }
   var eventListener = new EventListener(randomWayFusion, $scope.labyrinthe, comprehensiveExploration, $scope.labyrinthe2, resolve);
+  // var eventListener = new EventListener(randomWayFusion, labyrinthe, comprehensiveExploration, labyrinthe2, resolve);
   $scope.listener = eventListener;
 });
 

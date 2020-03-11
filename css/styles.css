@@ -42,11 +42,18 @@ body, html {
   /* transition: 1s; */
 }
 
+
+.selectionned {
+  background-color: blue;
+  /* opacity: 0; */
+  /* transition: 1s; */
+}
 .visited {
   background-color: red;
   /* opacity: 0; */
   /* transition: 1s; */
 }
+
 
 .x0 {
   border-right-style: solid;

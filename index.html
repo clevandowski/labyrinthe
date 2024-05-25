@@ -94,6 +94,15 @@
   
 var app = angular.module('myApp', []);
 
+// Mur de droite: 0x1
+// Mur du haut: 0x2
+// Mur de gauche: 0x4
+// Mur du bas: 0x8
+
+//  _
+// |_| = 0xF = 0b1111
+//
+
 // https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins
 app.service('comprehensiveExploration', function() {
   this._getPossibleWallsToRemove = function(cellule, labyrinthe) {
@@ -149,13 +158,13 @@ app.service('comprehensiveExploration', function() {
     return possibleWallsToRemove;
   }
 
-  this._breakWall = function(cellule, wallToRemove, labyrinthe) {
-    // console.log('before: ' + cellule.value + ' ' + wallToRemove.nextCellule.value);
-    var mask = 0xF ^ wallToRemove.orientation;
+  this._breakWall = function(cellule, wallToBreak, labyrinthe) {
+    // console.log('before: ' + cellule.value + ' ' + wallToBreak.nextCellule.value);
+    var mask = 0xF ^ wallToBreak.orientation;
     cellule.value = cellule.value & mask;
-    var oppositeMask = 0xF ^ wallToRemove.opposite;
-    wallToRemove.nextCellule.value = wallToRemove.nextCellule.value & oppositeMask;
-    // console.log('after: ' + cellule.value + ' ' + wallToRemove.nextCellule.value);
+    var oppositeMask = 0xF ^ wallToBreak.opposite;
+    wallToBreak.nextCellule.value = wallToBreak.nextCellule.value & oppositeMask;
+    // console.log('after: ' + cellule.value + ' ' + wallToBreak.nextCellule.value);
   } 
 
   this.init = function(labyrinthe) {
@@ -171,9 +180,9 @@ app.service('comprehensiveExploration', function() {
     }
     var firstCelluleX = Math.floor(Math.random() * labyrinthe.width);
     var firstCelluleY = Math.floor(Math.random() * labyrinthe.height);
-    labyrinthe.lastOpenedCellules = [];
-    labyrinthe.nextCellule = labyrinthe.cellules[firstCelluleY][firstCelluleX];
-    labyrinthe.nextCellule.current = true;
+    labyrinthe.cellulesWithBreakableWall = [];
+    labyrinthe.currentCellule = labyrinthe.cellules[firstCelluleY][firstCelluleX];
+    labyrinthe.currentCellule.current = true;
     labyrinthe.iteration = 0;
   }
 
@@ -181,48 +190,44 @@ app.service('comprehensiveExploration', function() {
     // this._initCellules(labyrinthe);
     // console.log('Labyrinthe: ' + JSON.stringify(labyrinthe));
 
-    if (labyrinthe.nextCellule != null) {
-      var cellule = labyrinthe.nextCellule;
-      cellule.processed = true;
+    // var cellule = labyrinthe.currentCellule;
+    labyrinthe.currentCellule.processed = true;
 
-      // Si la cellule est un cul de sac il faut trouver une cellule déjà traitée 
-      // qui a au moins 1 cellule non traitée autour d'elle, à partir de laquelle repartir 
-      // Tant que la cellule n'a pas de cellule non traitée (donc avec un mur) autour d'elle (haut bas gauche droite)
-      var possibleWallsToRemove = [];
-      while ((cellule != null)
-              // Attention là c'est pas une condition c'est une affectation 
-              && (possibleWallsToRemove = this._getPossibleWallsToRemove(cellule, labyrinthe)) 
-              && (possibleWallsToRemove.length == 0)) {
-        // On dépile les cellule précédentes qui avaient encore au moins 1 cellule non traitée autour d'elle
-        // Jusqu'à ce qu'on trouve une cellule qui a une cellule non traitée autour d'elle
-        labyrinthe.nextCellule = labyrinthe.lastOpenedCellules.pop();
-        cellule.current = false;
-        cellule = labyrinthe.nextCellule;
-        // cellule.current = true;
-      }
-
-      if (cellule != null) {
-        // console.log('labyrinthe.iteration: ' + labyrinthe.iteration + ', cellule: ' + JSON.stringify(cellule));
-        // On choisit au hasard un mur dans la liste des murs cassables (min 1, max 4) autour de la cellule
-        var wallToRemove = possibleWallsToRemove[Math.floor(Math.random() * possibleWallsToRemove.length)];
-        // On le casse
-        this._breakWall(cellule, wallToRemove, labyrinthe);
-        // S'il reste encore au moins 1 cellule non traitée autour de la cellule après ça
-        if (possibleWallsToRemove.length - 1 > 0) {
-          // On empile la cellule dans la liste des cellules ayant encore au moins 1 cellule non traitée autour d'elle 
-          // Donc avec un mur à casser
-          labyrinthe.lastOpenedCellules.push(cellule);
-        }
-        labyrinthe.nextCellule = wallToRemove.nextCellule;
-        labyrinthe.nextCellule.current = true;
-        cellule.current = false;
-      } else {
+    // Si la cellule courante est un cul de sac il faut rebrousser chemin jusqu'à trouver une cellule 
+    // qui a au moins 1 cellule non traitée autour d'elle (une cellule non traitée n'a aucun mur cassé)
+    // var possibleWallsToRemove = [];
+    var possibleWallsToRemove = this._getPossibleWallsToRemove(labyrinthe.currentCellule, labyrinthe);
+    // Tant que la cellule courante n'a pas de cellule non traitée autour d'elle (haut bas gauche droite)
+    while (possibleWallsToRemove.length == 0) {
+      // On dépile les cellule précédentes qui avaient encore au moins 1 cellule non traitée autour d'elle
+      // Jusqu'à ce qu'on trouve une cellule qui a une cellule non traitée autour d'elle
+      labyrinthe.currentCellule.current = false;
+      labyrinthe.currentCellule = labyrinthe.cellulesWithBreakableWall.pop();
+      // Si on n'a plus aucune cellule qui a une cellule non traitée autour d'elle, c'est fini
+      if (labyrinthe.currentCellule == null) {
         console.log('comprehensiveExploration finished');
         finish();
+        return;
       }
-    } else {
-      console.log("ERROR labyrinthe.nextCellule is null");
+      labyrinthe.currentCellule.current = true;
+      possibleWallsToRemove = this._getPossibleWallsToRemove(labyrinthe.currentCellule, labyrinthe);
     }
+
+    // console.log('labyrinthe.iteration: ' + labyrinthe.iteration + ', cellule: ' + JSON.stringify(cellule));
+    // On choisit au hasard un mur dans la liste des murs cassables (min 1, max 4) autour de la cellule
+    var wallToBreak = possibleWallsToRemove[Math.floor(Math.random() * possibleWallsToRemove.length)];
+    // On le casse
+    this._breakWall(labyrinthe.currentCellule, wallToBreak, labyrinthe);
+    // S'il reste encore au moins 1 cellule non traitée autour de la cellule après ça
+    if (possibleWallsToRemove.length - 1 > 0) {
+      // On empile la cellule dans la liste des cellules ayant encore au moins 1 cellule non traitée autour d'elle
+      // Donc avec un mur à casser
+      labyrinthe.cellulesWithBreakableWall.push(labyrinthe.currentCellule);
+    }
+
+    labyrinthe.currentCellule.current = false;
+    labyrinthe.currentCellule = wallToBreak.nextCellule;
+    labyrinthe.currentCellule.current = true;
     labyrinthe.iteration++;
     // console.log("INFO labyrinthe.iteration: " + labyrinthe.iteration);
   }
@@ -230,6 +235,8 @@ app.service('comprehensiveExploration', function() {
 
 // https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins
 app.service('randomWayFusion', function() {
+
+  // At start, each cell is in its own zone
   this._initZones = function(labyrinthe) {
     var zones = [];
     var id = 0;
@@ -265,11 +272,9 @@ app.service('randomWayFusion', function() {
             celluleBottom: labyrinthe.cellules[j + 1][i],
           }
           walls[id] = wallHorizontal;
-          // labyrinthe.cellules[j][i].bottomWall = wallHorizontal;
-          // labyrinthe.cellules[j + 1][i].topWall = wallHorizontal;
-          // console.log('walls[' + id + ']: ' + JSON.stringify(walls[id]));
           id++;
         }
+        
         if ( i < (labyrinthe.width - 1)) {
           var wallVertical = {
             id: id,
@@ -278,9 +283,6 @@ app.service('randomWayFusion', function() {
             celluleRight: labyrinthe.cellules[j][i + 1],
           }
           walls[id] = wallVertical;
-          // labyrinthe.cellules[j][i].rightWall = wallVertical;
-          // labyrinthe.cellules[j + 1][i].leftWall = wallVertical;
-          // console.log('walls[' + id + ']: ' + JSON.stringify(walls[id]));
           id++;
         }
       }
@@ -312,22 +314,24 @@ app.service('randomWayFusion', function() {
     // for (var i = 0; i < (labyrinthe.width * labyrinthe.height - 1); i++) {
     // if (walls.length > 0) {
     if (labyrinthe.iteration < (labyrinthe.width * labyrinthe.height - 1)) {
-      var wallIdToDelete = Math.floor(Math.random() * walls.length);
-      // console.log('remaing walls: ' + walls.length + ', wallIdToDelete: ' + walls[wallIdToDelete].id);
-      var wallToDelete = walls[wallIdToDelete];
+      var wallIdToBreak = Math.floor(Math.random() * walls.length);
+      // console.log('remaing walls: ' + walls.length + ', wallIdToBreak: ' + walls[wallIdToBreak].id);
+      var wallToBreak = walls[wallIdToBreak];
       // var startTimeSetZoneId;
       // var endTimeSetZoneId;
       // var endTimeConcat;
-      if (wallToDelete.type == "h") {
-        // On ne supprime pas le mur mais on l'enlève de la liste des murs à supprimer
-        if (wallToDelete.celluleTop.zoneId != wallToDelete.celluleBottom.zoneId) {
-          // Les cellules de la zone du bas sont recopiées dans la zone du haut si la zone du bas a le moins de cellules
-          var zoneTop = zones[wallToDelete.celluleTop.zoneId];
-          var zoneBottom = zones[wallToDelete.celluleBottom.zoneId];
+      if (wallToBreak.type == "h") {
+        // Si cellules de chaque côté du mur appartiennent à la même zone,
+        // on ne casse pas le mur mais on le supprime de la liste des murs à traiter
+        if (wallToBreak.celluleTop.zoneId != wallToBreak.celluleBottom.zoneId) {
+          // Fusion des 2 zones autour du mur à casser
+          // La zone qui possède le plus de cellules absorbe celle qui en a le moins
+          var zoneTop = zones[wallToBreak.celluleTop.zoneId];
+          var zoneBottom = zones[wallToBreak.celluleBottom.zoneId];
           if (zoneTop.cellules.length > zoneBottom.cellules.length) {
             // startTimeSetZoneId = Date.now();
             for (var j = 0; j < zoneBottom.cellules.length; j++) {
-              zoneBottom.cellules[j].zoneId = wallToDelete.celluleTop.zoneId;
+              zoneBottom.cellules[j].zoneId = wallToBreak.celluleTop.zoneId;
             }
             // endTimeSetZoneId = Date.now();
             zoneTop.cellules = zoneTop.cellules.concat(zoneBottom.cellules);
@@ -336,25 +340,27 @@ app.service('randomWayFusion', function() {
             // Et inversement Les cellules de la zone du haut sont recopiées dans la zone du bas si la zone du haut a le moins de cellules
             // startTimeSetZoneId = Date.now();
             for (var j = 0; j < zoneTop.cellules.length; j++) {
-              zoneTop.cellules[j].zoneId = wallToDelete.celluleBottom.zoneId;
+              zoneTop.cellules[j].zoneId = wallToBreak.celluleBottom.zoneId;
             }
             // endTimeSetZoneId = Date.now();
             zoneBottom.cellules = zoneBottom.cellules.concat(zoneTop.cellules);
             // endTimeConcat = Date.now();
           }
-          // On supprime le mur du bas (0x8) de la cellule du haut...
-          wallToDelete.celluleTop.value = wallToDelete.celluleTop.value & 0x7;
+          // On casse le mur du bas (0x8) de la cellule du haut...
+          wallToBreak.celluleTop.value = wallToBreak.celluleTop.value & 0x7;
           // ... et le mur du haut (0x2) de la cellule du bas...
-          wallToDelete.celluleBottom.value = wallToDelete.celluleBottom.value & 0xD;
+          wallToBreak.celluleBottom.value = wallToBreak.celluleBottom.value & 0xD;
           // console.log('top: ' + zoneTop.id + ', bottom: ' + zoneBottom.id + ', top length: ' + zoneTop.cellules.length + ', bottom length: ' + zoneBottom.cellules.length + ', set id duration:' + (endTimeSetZoneId - startTimeSetZoneId) + 'ms, concat duration: ' + ( endTimeConcat - endTimeSetZoneId) + 'ms');
           labyrinthe.iteration++;
         }
       }
-      if (wallToDelete.type == "v") {
-        if (wallToDelete.celluleLeft.zoneId != wallToDelete.celluleRight.zoneId) {
-          // Les cellules de la zone du bas sont recopiées dans la zone du haut si la zone du bas a le moins de cellules
-          var zoneLeft = zones[wallToDelete.celluleLeft.zoneId];
-          var zoneRight = zones[wallToDelete.celluleRight.zoneId];
+      if (wallToBreak.type == "v") {
+        // On ne casse pas le mur mais on l'enlève de la liste des murs à casser
+        if (wallToBreak.celluleLeft.zoneId != wallToBreak.celluleRight.zoneId) {
+          // Fusion des 2 zones autour du mur à casser
+          // La zone qui possède le plus de cellules absorbe celle qui en a le moins
+          var zoneLeft = zones[wallToBreak.celluleLeft.zoneId];
+          var zoneRight = zones[wallToBreak.celluleRight.zoneId];
           if (zoneLeft.cellules.length > zoneRight.cellules.length) {
             // startTimeSetZoneId = Date.now();
             for (var j = 0; j < zoneRight.cellules.length; j++) {
@@ -366,22 +372,22 @@ app.service('randomWayFusion', function() {
           } else {
             // startTimeSetZoneId = Date.now();
             for (var j = 0; j < zoneLeft.cellules.length; j++) {
-              zoneLeft.cellules[j].zoneId = wallToDelete.celluleRight.zoneId;
+              zoneLeft.cellules[j].zoneId = wallToBreak.celluleRight.zoneId;
             }
             // endTimeSetZoneId = Date.now();
             zoneRight.cellules = zoneRight.cellules.concat(zoneLeft.cellules);
             // endTimeConcat = Date.now();
           }
-          // On supprime le mur de droite (0x1) de la cellule de gauche...
-          wallToDelete.celluleLeft.value = wallToDelete.celluleLeft.value & 0xE;
+          // On casse le mur de droite (0x1) de la cellule de gauche...
+          wallToBreak.celluleLeft.value = wallToBreak.celluleLeft.value & 0xE;
           // ... et le mur de gauche (0x4) de la cellule du droite...
-          wallToDelete.celluleRight.value = wallToDelete.celluleRight.value & 0xB;
+          wallToBreak.celluleRight.value = wallToBreak.celluleRight.value & 0xB;
           // console.log('left: ' + zoneLeft.id + ', right: ' + zoneRight.id + ', left length: ' + zoneLeft.cellules.length + ', right length: ' + zoneRight.cellules.length + ', set id duration:' + (endTimeSetZoneId - startTimeSetZoneId) + 'ms, concat duration: ' + ( endTimeConcat - endTimeSetZoneId) + 'ms');
           labyrinthe.iteration++;
         }
       }
       // On supprime le mur de la liste des murs
-      walls.splice(walls.indexOf(wallToDelete), 1);
+      walls.splice(walls.indexOf(wallToBreak), 1);
     } else {
       console.log('randomWayFusion finished');
       finish();

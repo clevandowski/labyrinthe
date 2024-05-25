@@ -33,7 +33,7 @@ body, html {
 .current {
   background-color: black;
   /* opacity: 0; */
-  /* transition: 0.3s; */
+  /* transition: background-color .3s linear; */
 }
 
 .processed {

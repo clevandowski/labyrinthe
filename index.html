@@ -7,26 +7,25 @@
 </head>
 <body>
 <div ng-app="myApp" ng-controller="myCtrl">
-  <!-- <form name="myForm"> -->
-    <span>
-      <label>
-        Width: <input type="text" name="labyrinthe1Width" ng-model="labyrinthe.width" required>
-      </label>
-      <label>
-        Height: <input type="text" name="labyrinthe1Height" ng-model="labyrinthe.height" required>
-      </label>
-    </span>
-    <br>
-    <span>
-      <label>
-        Width: <input type="text" name="labyrinthe2Width" ng-model="labyrinthe2.width" required>
-      </label>
-      <label>
-        Height: <input type="text" name="labyrinthe2Height" ng-model="labyrinthe2.height" required>
-      </label>
-    </span>
-  <!-- </form> -->
-  <!-- <button ng-click="listener.init(labyrinthe, labyrinthe2)">Initialization</button> -->
+  <span>
+    Exploration exhaustive
+    <label>
+      Width: <input type="text" name="labyrinthe2Width" ng-model="labyrinthe2.width" required/>
+    </label>
+    <label>
+      Height: <input type="text" name="labyrinthe2Height" ng-model="labyrinthe2.height" required/>
+    </label>
+  </span>
+  <br/>
+  <span>
+    Fusion aléatoire de chemins
+    <label>
+      Width: <input type="text" name="labyrinthe1Width" ng-model="labyrinthe.width" required/>
+    </label>
+    <label>
+      Height: <input type="text" name="labyrinthe1Height" ng-model="labyrinthe.height" required/>
+    </label>
+  </span>
   <span ng-show="labyrinthe.initializing">Initialization in progress...</span>
 
   <h1>
@@ -238,6 +237,16 @@ app.service('randomWayFusion', function() {
 
   // At start, each cell is in its own zone
   this._initZones = function(labyrinthe) {
+
+    var initZone = function(id) {
+      zone = {
+        size: 1
+      };
+
+      zone.parent = zone;
+      return zone;
+    }
+
     var zones = [];
     var id = 0;
     for (var j = 0; j < labyrinthe.height; j++) {
@@ -245,12 +254,8 @@ app.service('randomWayFusion', function() {
       // console.log('ligne: ' + JSON.stringify(ligne));
       for (var i = 0; i < labyrinthe.width; i++) {
         var cellule = ligne[i];
-        zones[id] = {
-          id: id,
-          cellules: [ cellule ]
-        };
-        cellule.zoneId = id;
-        // console.log('zones[' + id + ']: ' + JSON.stringify(zones[id]));
+        zones[id] = initZone();
+        cellule.zone = zone;
         id++;
       }
     }
@@ -296,6 +301,28 @@ app.service('randomWayFusion', function() {
     labyrinthe.iteration = 0;
   }
 
+  // Return root zone master of current zone
+  this._getParentZone = function(zone) {
+    // console.log('zoneId: ' + zoneId + ', zone: ' + JSON.stringify(zone));
+    while (zone != zone.parent) {
+      parent = zone.parent;
+      // Path compression
+      zone.parent = parent.parent;
+      zone = zone.parent;
+    }
+    return zone;
+  }
+
+  this._fusionZones = function(zone1, zone2) {
+    if (zone1.size > zone2.size) {
+      zone2.parent = zone1;
+      zone1.size += zone2.size;
+    } else {
+      zone1.parent = zone2;
+      zone2.size += zone1.size;
+    }
+  }
+  
   this.generate = function(labyrinthe, finish) {
     // Au départ:
     // * Chaque zone contient 1 cellule 
@@ -312,7 +339,9 @@ app.service('randomWayFusion', function() {
     // Nombre d'itérations: labyrinthe.width * labyrinthe.height - 1
     // Ou sinon lorsqu'il ne reste plus qu'une seule zone
     // for (var i = 0; i < (labyrinthe.width * labyrinthe.height - 1); i++) {
+    // On peut arrêter si tous les murs cassables sont traités (tous ne sont pas forcément cassables, si les zones sont les mêmes)
     // if (walls.length > 0) {
+    // Mais le labyrinthe est fini si on a fusionné toutes les zones en une seule donc si on a traité toutes les cellules
     if (labyrinthe.iteration < (labyrinthe.width * labyrinthe.height - 1)) {
       var wallIdToBreak = Math.floor(Math.random() * walls.length);
       // console.log('remaing walls: ' + walls.length + ', wallIdToBreak: ' + walls[wallIdToBreak].id);
@@ -323,29 +352,13 @@ app.service('randomWayFusion', function() {
       if (wallToBreak.type == "h") {
         // Si cellules de chaque côté du mur appartiennent à la même zone,
         // on ne casse pas le mur mais on le supprime de la liste des murs à traiter
-        if (wallToBreak.celluleTop.zoneId != wallToBreak.celluleBottom.zoneId) {
-          // Fusion des 2 zones autour du mur à casser
-          // La zone qui possède le plus de cellules absorbe celle qui en a le moins
-          var zoneTop = zones[wallToBreak.celluleTop.zoneId];
-          var zoneBottom = zones[wallToBreak.celluleBottom.zoneId];
-          if (zoneTop.cellules.length > zoneBottom.cellules.length) {
-            // startTimeSetZoneId = Date.now();
-            for (var j = 0; j < zoneBottom.cellules.length; j++) {
-              zoneBottom.cellules[j].zoneId = wallToBreak.celluleTop.zoneId;
-            }
-            // endTimeSetZoneId = Date.now();
-            zoneTop.cellules = zoneTop.cellules.concat(zoneBottom.cellules);
-            // endTimeConcat = Date.now();
-          } else {
-            // Et inversement Les cellules de la zone du haut sont recopiées dans la zone du bas si la zone du haut a le moins de cellules
-            // startTimeSetZoneId = Date.now();
-            for (var j = 0; j < zoneTop.cellules.length; j++) {
-              zoneTop.cellules[j].zoneId = wallToBreak.celluleBottom.zoneId;
-            }
-            // endTimeSetZoneId = Date.now();
-            zoneBottom.cellules = zoneBottom.cellules.concat(zoneTop.cellules);
-            // endTimeConcat = Date.now();
-          }
+        var zoneTop = this._getParentZone(wallToBreak.celluleTop.zone);
+        var zoneBottom = this._getParentZone(wallToBreak.celluleBottom.zone);
+        // Si les zones sont les mêmes, on supprime le mur de la liste des murs à casser
+        if (zoneTop != zoneBottom) {
+          // On fusionne les 2 zones
+          this._fusionZones(zoneTop, zoneBottom);
+
           // On casse le mur du bas (0x8) de la cellule du haut...
           wallToBreak.celluleTop.value = wallToBreak.celluleTop.value & 0x7;
           // ... et le mur du haut (0x2) de la cellule du bas...
@@ -354,30 +367,16 @@ app.service('randomWayFusion', function() {
           labyrinthe.iteration++;
         }
       }
+
       if (wallToBreak.type == "v") {
         // On ne casse pas le mur mais on l'enlève de la liste des murs à casser
-        if (wallToBreak.celluleLeft.zoneId != wallToBreak.celluleRight.zoneId) {
-          // Fusion des 2 zones autour du mur à casser
-          // La zone qui possède le plus de cellules absorbe celle qui en a le moins
-          var zoneLeft = zones[wallToBreak.celluleLeft.zoneId];
-          var zoneRight = zones[wallToBreak.celluleRight.zoneId];
-          if (zoneLeft.cellules.length > zoneRight.cellules.length) {
-            // startTimeSetZoneId = Date.now();
-            for (var j = 0; j < zoneRight.cellules.length; j++) {
-              zoneRight.cellules[j].zoneId = zoneLeft.id;
-            }
-            // endTimeSetZoneId = Date.now();
-            zoneLeft.cellules = zoneLeft.cellules.concat(zoneRight.cellules);
-            // endTimeConcat = Date.now();
-          } else {
-            // startTimeSetZoneId = Date.now();
-            for (var j = 0; j < zoneLeft.cellules.length; j++) {
-              zoneLeft.cellules[j].zoneId = wallToBreak.celluleRight.zoneId;
-            }
-            // endTimeSetZoneId = Date.now();
-            zoneRight.cellules = zoneRight.cellules.concat(zoneLeft.cellules);
-            // endTimeConcat = Date.now();
-          }
+        var zoneLeft = this._getParentZone(wallToBreak.celluleLeft.zone);
+        var zoneRight = this._getParentZone(wallToBreak.celluleRight.zone);
+        // Si les zones sont les mêmes, on supprime le mur de la liste des murs à casser
+        if (zoneLeft != zoneRight) {
+          // On fusionne les 2 zones
+          this._fusionZones(zoneLeft, zoneRight);
+
           // On casse le mur de droite (0x1) de la cellule de gauche...
           wallToBreak.celluleLeft.value = wallToBreak.celluleLeft.value & 0xE;
           // ... et le mur de gauche (0x4) de la cellule du droite...
@@ -388,6 +387,7 @@ app.service('randomWayFusion', function() {
       }
       // On supprime le mur de la liste des murs
       walls.splice(walls.indexOf(wallToBreak), 1);
+      console.log('labyrinthe.iteration: ' + labyrinthe.iteration + ', walls.length: ' + walls.length);
     } else {
       console.log('randomWayFusion finished');
       finish();
@@ -648,7 +648,7 @@ app.controller('myCtrl', function($scope, $timeout, $document, randomWayFusion, 
       var wWidth = windowsWidth - 30;
       var nbCellule = parseInt(this.width, 10);
       this.cssSize = (wWidth / nbCellule) - 2;
-      if (this.cssSize < 4) this.cssSize = 4;
+      if (this.cssSize < 2) this.cssSize = 2;
       console.log("width: " + this.width + ", height: " + this.height + ", cssSize: " + this.cssSize);
       console.log("windowsWidth: " + windowsWidth + ", windowsHeight:" + windowsHeight);
       // console.log("wWidth: " + wWidth + ", nbCellule:" + nbCellule);

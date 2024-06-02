@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<link rel="stylesheet" href="css/styles.css">
+<script src="scripts/angular.js"></script>
+<script src="scripts/maze-common.js"></script>
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+<div ng-app="myApp" ng-controller="myCtrl">
+
+  <span ng-show="maze.initializing">Initialization in progress...</span>
+
+  <div style="display: inline-block; position: relative;">
+    <h2>
+      <a href="https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_depth-first_search">Depth first algorythm</a>
+    </h2>
+    <span>
+      <label for="mazeWidth">Width</label>
+      <input type="text" id="mazeWidth" name="mazeWidth" ng-model="maze.width" required/>|
+      <label for="mazeHeight">Height</label>
+      <input type="text" id="mazeHeight" name="mazeHeight" ng-model="maze.height" required/>
+    </span>
+    <div>
+      <button ng-click="listener.generate(maze)">Generate</button>
+      <button ng-click="listener.generateQuick(maze)">Quick Generate</button>
+    </div>
+    <h3>
+      <span>| Iteration {{maze.iteration}} |</span>
+      <button ng-show="maze.generated" ng-click="listener.resolveMaze(null, null, maze)">Resolve</button>
+      <button ng-show="maze.generated" ng-click="listener.resolveQuickMaze(null, null, maze)">Quick Resolve</button>
+      <br/>
+      <span ng-show="maze.generated">| Generation duration: {{maze.generationDuration}}ms |</span>
+      <span ng-show="maze.generated"> Steps: {{maze.resolutionStep}} | Resolution duration: {{maze.resolutionDuration}}ms |</span>
+      <span ng-show="maze.generating">Generating...</span>
+      <span ng-show="maze.resolving">Resolving...</span>
+    </h3>
+    <div class="bordure" style="width: {{ maze.width * maze.cssSize }}px; height: {{ maze.height * maze.cssSize }}px;">
+      <div 
+        ng-repeat="ligne in maze.cellules"
+        class="line">
+        <div 
+          ng-repeat="cellule in ligne"
+          ng-class="maze.getCssClass(cellule)"
+          ng-click="listener.setStartOrEnd(cellule, maze)"
+          style="width: {{ maze.cssWidth }}px; height: {{ maze.cssHeight }}px; border-width: {{ maze.cssBorderWidth }}px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  
+// var app = angular.module('myApp', []);
+
+// Mur de droite: 0x1
+// Mur du haut: 0x2
+// Mur de gauche: 0x4
+// Mur du bas: 0x8
+
+//  _
+// |_| = 0xF = 0b1111
+//
+
+// https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins
+app.service('mazeGenerator', function() {
+  this._getPossibleWallsToRemove = function(cellule, maze) {
+    var possibleWallsToRemove = [];
+    // S'il y une cellule à gauche
+    if (cellule.x > 0
+        // Et qu'il y un mur
+        // && (cellule.value & 0x4) == 0x4
+        // Et que la cellule de gauche n'a pas été traitée
+        && maze.cellules[cellule.y][cellule.x - 1].processed == false) {
+      possibleWallsToRemove.push({
+        orientation: 0x4,
+        opposite: 0x1,
+        nextCellule: maze.cellules[cellule.y][cellule.x - 1]
+      });
+    }
+    // S'il y une cellule à droite
+    if (cellule.x < (maze.width - 1)
+        // Et qu'il y un mur
+        // && (cellule.value & 0x1) == 0x1
+        // Et que la cellule de droite n'a pas été traitée
+        && maze.cellules[cellule.y][cellule.x + 1].processed == false) {
+      possibleWallsToRemove.push({
+        orientation: 0x1,
+        opposite: 0x4,
+        nextCellule: maze.cellules[cellule.y][cellule.x + 1]
+      });
+    }
+    // S'il y une cellule en haut
+    if (cellule.y > 0
+        // Et qu'il y un mur
+        // && (cellule.value & 0x2) == 0x2
+        // Et que la cellule en haut n'a pas été traitée
+        && maze.cellules[cellule.y - 1][cellule.x].processed == false) {
+      possibleWallsToRemove.push({
+        orientation: 0x2,
+        opposite: 0x8,
+        nextCellule: maze.cellules[cellule.y - 1][cellule.x]
+      });
+    }
+    // S'il y une cellule en bas
+    if (cellule.y < (maze.height - 1)
+        // Et qu'il y un mur
+        // && (cellule.value & 0x8) == 0x8
+        // Et que la cellule en bas n'a pas été traitée
+        && maze.cellules[cellule.y + 1][cellule.x].processed == false) {
+      possibleWallsToRemove.push({
+        orientation: 0x8,
+        opposite: 0x2,
+        nextCellule: maze.cellules[cellule.y + 1][cellule.x]
+      });
+    }
+    return possibleWallsToRemove;
+  }
+
+  this._breakWall = function(cellule, wallToBreak, maze) {
+    // console.log('before: ' + cellule.value + ' ' + wallToBreak.nextCellule.value);
+    var mask = 0xF ^ wallToBreak.orientation;
+    cellule.value = cellule.value & mask;
+    var oppositeMask = 0xF ^ wallToBreak.opposite;
+    wallToBreak.nextCellule.value = wallToBreak.nextCellule.value & oppositeMask;
+    // console.log('after: ' + cellule.value + ' ' + wallToBreak.nextCellule.value);
+  } 
+
+  this.init = function(maze) {
+    for (var j = 0; j < maze.height; j++) {
+      var ligne = maze.cellules[j];
+      // console.log('ligne: ' + JSON.stringify(ligne));
+      for (var i = 0; i < maze.width; i++) {
+        var cellule = ligne[i];
+        cellule.processed = false;
+        cellule.current = false;
+        // console.log('zones[' + id + ']: ' + JSON.stringify(zones[id]));
+      }
+    }
+    var firstCelluleX = Math.floor(Math.random() * maze.width);
+    var firstCelluleY = Math.floor(Math.random() * maze.height);
+    maze.cellulesWithBreakableWall = [];
+    maze.currentCellule = maze.cellules[firstCelluleY][firstCelluleX];
+    maze.currentCellule.current = true;
+    maze.iteration = 0;
+  }
+
+  this.generate = function(maze, finish) {
+    // this._initCellules(maze);
+    // console.log('maze: ' + JSON.stringify(maze));
+
+    // var cellule = maze.currentCellule;
+    maze.currentCellule.processed = true;
+
+    // Si la cellule courante est un cul de sac il faut rebrousser chemin jusqu'à trouver une cellule 
+    // qui a au moins 1 cellule non traitée autour d'elle (une cellule non traitée n'a aucun mur cassé)
+    // var possibleWallsToRemove = [];
+    var possibleWallsToRemove = this._getPossibleWallsToRemove(maze.currentCellule, maze);
+    // Tant que la cellule courante n'a pas de cellule non traitée autour d'elle (haut bas gauche droite)
+    while (possibleWallsToRemove.length == 0) {
+      // On dépile les cellule précédentes qui avaient encore au moins 1 cellule non traitée autour d'elle
+      // Jusqu'à ce qu'on trouve une cellule qui a une cellule non traitée autour d'elle
+      maze.currentCellule.current = false;
+      maze.currentCellule = maze.cellulesWithBreakableWall.pop();
+      // Si on n'a plus aucune cellule qui a une cellule non traitée autour d'elle, c'est fini
+      if (maze.currentCellule == null) {
+        console.log('mazeGenerator finished');
+        finish();
+        return;
+      }
+      maze.currentCellule.current = true;
+      possibleWallsToRemove = this._getPossibleWallsToRemove(maze.currentCellule, maze);
+    }
+
+    // console.log('maze.iteration: ' + maze.iteration + ', cellule: ' + JSON.stringify(cellule));
+    // On choisit au hasard un mur dans la liste des murs cassables (min 1, max 4) autour de la cellule
+    var wallToBreak = possibleWallsToRemove[Math.floor(Math.random() * possibleWallsToRemove.length)];
+    // On le casse
+    this._breakWall(maze.currentCellule, wallToBreak, maze);
+    // S'il reste encore au moins 1 cellule non traitée autour de la cellule après ça
+    if (possibleWallsToRemove.length - 1 > 0) {
+      // On empile la cellule dans la liste des cellules ayant encore au moins 1 cellule non traitée autour d'elle
+      // Donc avec un mur à casser
+      maze.cellulesWithBreakableWall.push(maze.currentCellule);
+    }
+
+    maze.currentCellule.current = false;
+    maze.currentCellule = wallToBreak.nextCellule;
+    maze.currentCellule.current = true;
+    maze.iteration++;
+    // console.log("INFO maze.iteration: " + maze.iteration);
+  }
+});
+  </script>
+</body>
+</html>

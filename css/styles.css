@@ -1,7 +1,70 @@
-body, html {
+body {
   width: 100%;
   /* height: 1080px; */
   height: 100%;
+  background-color: black;
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+a {
+  color: powderblue;
+  /* clicked color */
+  text-decoration: solid;
+}
+
+label {
+  display: inline-block;
+  text-align: left;
+  color: white;
+  font-size: 16px;
+  margin: 5px;
+  width: 50px;
+  font-style: bold;
+}
+
+input[type=text] {
+  background-color: black;
+  color: #ffffff;
+  font-size: 16px;
+  width: 50px;
+  padding: 5px;
+  border: 2px solid white;
+  box-sizing: border-box;
+  margin: 2px;
+}
+
+input[type=text]:focus {
+  background-color: darkslateblue;
+  color: white;
+  font-size: 16px;
+  width: 50px;
+  padding: 5px;
+  border: 2px solid darkslateblue;
+  box-sizing: border-box;
+  margin: 2px;
+}
+
+button {
+  background-color: black;
+  color: white;
+  font-size: 16px;
+  width: 200px;
+  padding: 5px;
+  border: 2px solid white;
+  box-sizing: border-box;
+  margin: 2px;
+}
+
+button:hover {
+  background-color: darkslateblue;
+  color: white;
+  font-size: 16px;
+  width: 200px;
+  padding: 5px;
+  border: 2px solid darkslateblue;
+  box-sizing: border-box;
+  margin: 2px;
 }
 
 .bordure {
@@ -13,6 +76,9 @@ body, html {
   border-width: 4px;
   border-color: red; */
   /* clear: left; */
+  border-width: 2px;
+  border-style: solid;
+  border-color: white;
 }
 
 .line {
@@ -29,10 +95,11 @@ body, html {
   /* background-color: transparent; */
   /* opacity: 1; */
   /* transition: 1s; */
+  border-width: 1px;
 }
 
 .current {
-  background-color: black;
+  background-color: white;
   /* opacity: 0; */
   /* transition: background-color .3s linear; */
 }
@@ -45,7 +112,7 @@ body, html {
 
 
 .selectionned {
-  background-color: blue;
+  background-color: royalblue;
   /* opacity: 0; */
   /* transition: 1s; */
 }
@@ -58,225 +125,225 @@ body, html {
 
 .x0 {
   border-right-style: solid;
-  border-right-width: 1px;
   border-right-color: transparent;
+  /* border-right-width: 0%; */
   border-top-style: solid;
-  border-top-width: 1px;
   border-top-color: transparent;
+  /* border-top-width: 0%; */
   border-left-style: solid;
-  border-left-width: 1px;
   border-left-color: transparent;
+  /* border-left-width: 0%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
   border-bottom-color: transparent;
+  /* border-bottom-width: 0%; */
 }
 .x1 {
   border-right-style: solid;
-  border-right-width: 1px;
-  border-right-color: black;
+  border-right-color: white;
+  /* border-right-width: 25%; */
   border-top-style: solid;
-  border-top-width: 1px;
   border-top-color: transparent;
+  /* border-top-width: 0%; */
   border-left-style: solid;
-  border-left-width: 1px;
   border-left-color: transparent;
+  /* border-left-width: 0%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
   border-bottom-color: transparent;
+  /* border-bottom-width: 0%; */
 }
 .x2 {
   border-right-style: solid;
-  border-right-width: 1px;
   border-right-color: transparent;
+  /* border-right-width: 0%; */
   border-top-style: solid;
-  border-top-width: 1px;
-  border-top-color: black;
+  border-top-color: white;
+  /* border-top-width: 25%; */
   border-left-style: solid;
-  border-left-width: 1px;
   border-left-color: transparent;
+  /* border-left-width: 0%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
   border-bottom-color: transparent;
+  /* border-bottom-width: 0%; */
 }
 .x3 {
   border-right-style: solid;
-  border-right-width: 1px;
-  border-right-color: black;
+  border-right-color: white;
+  /* border-right-width: 25%; */
   border-top-style: solid;
-  border-top-width: 1px;
-  border-top-color: black;
+  border-top-color: white;
+  /* border-top-width: 25%; */
   border-left-style: solid;
-  border-left-width: 1px;
   border-left-color: transparent;
+  /* border-left-width: 0%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
   border-bottom-color: transparent;
+  /* border-bottom-width: 0%; */
 }
 .x4 {
   border-right-style: solid;
-  border-right-width: 1px;
   border-right-color: transparent;
+  /* border-right-width: 0%; */
   border-top-style: solid;
-  border-top-width: 1px;
   border-top-color: transparent;
+  /* border-top-width: 0%; */
   border-left-style: solid;
-  border-left-width: 1px;
-  border-left-color: black;
+  border-left-color: white;
+  /* border-left-width: 25%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
   border-bottom-color: transparent;
+  /* border-bottom-width: 0%; */
 }
 .x5 {
   border-right-style: solid;
-  border-right-width: 1px;
-  border-right-color: black;
+  border-right-color: white;
+  /* border-right-width: 25%; */
   border-top-style: solid;
-  border-top-width: 1px;
   border-top-color: transparent;
+  /* border-top-width: 0%; */
   border-left-style: solid;
-  border-left-width: 1px;
-  border-left-color: black;
+  border-left-color: white;
+  /* border-left-width: 25%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
   border-bottom-color: transparent;
+  /* border-bottom-width: 0%; */
 }
 .x6 {
   border-right-style: solid;
-  border-right-width: 1px;
   border-right-color: transparent;
+  /* border-right-width: 0%; */
   border-top-style: solid;
-  border-top-width: 1px;
-  border-top-color: black;
+  border-top-color: white;
+  /* border-top-width: 25%; */
   border-left-style: solid;
-  border-left-width: 1px;
-  border-left-color: black;
+  border-left-color: white;
+  /* border-left-width: 25%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
   border-bottom-color: transparent;
+  /* border-bottom-width: 0%; */
 }
 .x7 {
   border-right-style: solid;
-  border-right-width: 1px;
-  border-right-color: black;
+  border-right-color: white;
+  /* border-right-width: 25%; */
   border-top-style: solid;
-  border-top-width: 1px;
-  border-top-color: black;
+  border-top-color: white;
+  /* border-top-width: 25%; */
   border-left-style: solid;
-  border-left-width: 1px;
-  border-left-color: black;
+  border-left-color: white;
+  /* border-left-width: 25%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
   border-bottom-color: transparent;
+  /* border-bottom-width: 0%; */
 }
 .x8 {
   border-right-style: solid;
-  border-right-width: 1px;
   border-right-color: transparent;
+  /* border-right-width: 0%; */
   border-top-style: solid;
-  border-top-width: 1px;
   border-top-color: transparent;
+  /* border-top-width: 0%; */
   border-left-style: solid;
-  border-left-width: 1px;
   border-left-color: transparent;
+  /* border-left-width: 0%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
-  border-bottom-color: black;
+  border-bottom-color: white;
+  /* border-bottom-width: 25%; */
 }
 .x9 {
   border-right-style: solid;
-  border-right-width: 1px;
-  border-right-color: black;
+  border-right-color: white;
+  /* border-right-width: 25%; */
   border-top-style: solid;
-  border-top-width: 1px;
   border-top-color: transparent;
+  /* border-top-width: 0%; */
   border-left-style: solid;
-  border-left-width: 1px;
   border-left-color: transparent;
+  /* border-left-width: 0%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
-  border-bottom-color: black;
+  border-bottom-color: white;
+  /* border-bottom-width: 25%; */
 }
 .xA {
   border-right-style: solid;
-  border-right-width: 1px;
   border-right-color: transparent;
+  /* border-right-width: 0%; */
   border-top-style: solid;
-  border-top-width: 1px;
-  border-top-color: black;
+  border-top-color: white;
+  /* border-top-width: 25%; */
   border-left-style: solid;
-  border-left-width: 1px;
   border-left-color: transparent;
+  /* border-left-width: 0%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
-  border-bottom-color: black;
+  border-bottom-color: white;
+  /* border-bottom-width: 25%; */
 }
 .xB {
   border-right-style: solid;
-  border-right-width: 1px;
-  border-right-color: black;
+  border-right-color: white;
+  /* border-right-width: 25%; */
   border-top-style: solid;
-  border-top-width: 1px;
-  border-top-color: black;
+  border-top-color: white;
+  /* border-top-width: 25%; */
   border-left-style: solid;
-  border-left-width: 1px;
   border-left-color: transparent;
+  /* border-left-width: 0%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
-  border-bottom-color: black;
+  border-bottom-color: white;
+  /* border-bottom-width: 25%; */
 }
 .xC {
   border-right-style: solid;
-  border-right-width: 1px;
   border-right-color: transparent;
+  /* border-right-width: 0%; */
   border-top-style: solid;
-  border-top-width: 1px;
   border-top-color: transparent;
+  /* border-top-width: 0%; */
   border-left-style: solid;
-  border-left-width: 1px;
-  border-left-color: black;
+  border-left-color: white;
+  /* border-left-width: 25%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
-  border-bottom-color: black;
+  border-bottom-color: white;
+  /* border-bottom-width: 25%; */
 }
 .xD {
   border-right-style: solid;
-  border-right-width: 1px;
-  border-right-color: black;
+  border-right-color: white;
+  /* border-right-width: 25%; */
   border-top-style: solid;
-  border-top-width: 1px;
   border-top-color: transparent;
+  /* border-top-width: 0%; */
   border-left-style: solid;
-  border-left-width: 1px;
-  border-left-color: black;
+  border-left-color: white;
+  /* border-left-width: 25%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
-  border-bottom-color: black;
+  border-bottom-color: white;
+  /* border-bottom-width: 25%; */
 }
 .xE {
   border-right-style: solid;
-  border-right-width: 1px;
   border-right-color: transparent;
+  /* border-right-width: 0%; */
   border-top-style: solid;
-  border-top-width: 1px;
-  border-top-color: black;
+  border-top-color: white;
+  /* border-top-width: 25%; */
   border-left-style: solid;
-  border-left-width: 1px;
-  border-left-color: black;
+  border-left-color: white;
+  /* border-left-width: 25%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
-  border-bottom-color: black;
+  border-bottom-color: white;
+  /* border-bottom-width: 25%; */
 }
 .xF {
   border-right-style: solid;
-  border-right-width: 1px;
-  border-right-color: black;
+  border-right-color: white;
+  /* border-right-width: 25%; */
   border-top-style: solid;
-  border-top-width: 1px;
-  border-top-color: black;
+  border-top-color: white;
+  /* border-top-width: 25%; */
   border-left-style: solid;
-  border-left-width: 1px;
-  border-left-color: black;
+  border-left-color: white;
+  /* border-left-width: 25%; */
   border-bottom-style: solid;
-  border-bottom-width: 1px;
-  border-bottom-color: black;
+  border-bottom-color: white;
+  /* border-bottom-width: 25%; */
 }

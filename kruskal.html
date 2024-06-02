@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<link rel="stylesheet" href="css/styles.css">
+<script src="scripts/angular.js"></script>
+<script src="scripts/maze-common.js"></script>
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+<div ng-app="myApp" ng-controller="myCtrl">
+
+  <span ng-show="maze.initializing">Initialization in progress...</span>
+
+  <div style="display: inline-block; position: relative;">
+    <h2>
+      <a href="https://en.wikipedia.org/wiki/Maze_generation_algorithm#Iterative_randomized_Kruskal's_algorithm_(with_sets)">Depth first algorythm</a>
+    </h2>
+    <span>
+      <label for="mazeWidth">Width</label>
+      <input type="text" id="mazeWidth" name="mazeWidth" ng-model="maze.width" required/>|
+      <label for="mazeHeight">Height</label>
+      <input type="text" id="mazeHeight" name="mazeHeight" ng-model="maze.height" required/>
+    </span>
+    <div>
+      <button ng-click="listener.generate(maze)">Generate</button>
+      <button ng-click="listener.generateQuick(maze)">Quick Generate</button>
+    </div>
+    <h3>
+      <span>| Iteration {{maze.iteration}} |</span>
+      <button ng-show="maze.generated" ng-click="listener.resolveMaze(null, null, maze)">Resolve</button>
+      <button ng-show="maze.generated" ng-click="listener.resolveQuickMaze(null, null, maze)">Quick Resolve</button>
+      <br/>
+      <span ng-show="maze.generated">| Generation duration: {{maze.generationDuration}}ms |</span>
+      <span ng-show="maze.generated"> Steps: {{maze.resolutionStep}} | Resolution duration: {{maze.resolutionDuration}}ms |</span>
+      <span ng-show="maze.generating">Generating...</span>
+      <span ng-show="maze.resolving">Resolving...</span>
+    </h3>
+    <div class="bordure" style="width: {{ maze.width * maze.cssSize }}px; height: {{ maze.height * maze.cssSize }}px;">
+      <div 
+        ng-repeat="ligne in maze.cellules"
+        class="line">
+        <div 
+          ng-repeat="cellule in ligne"
+          ng-class="maze.getCssClass(cellule)"
+          ng-click="listener.setStartOrEnd(cellule, maze)"
+          style="width: {{ maze.cssWidth }}px; height: {{ maze.cssHeight }}px; border-width: {{ maze.cssBorderWidth }}px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  
+// var app = angular.module('myApp', []);
+
+// Mur de droite: 0x1
+// Mur du haut: 0x2
+// Mur de gauche: 0x4
+// Mur du bas: 0x8
+
+//  _
+// |_| = 0xF = 0b1111
+//
+
+// https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins
+app.service('mazeGenerator', function() {
+  // At start, each cell is in its own zone
+  this._initZones = function(maze) {
+
+    var initZone = function(id) {
+      zone = {
+        size: 1
+      };
+
+      zone.parent = zone;
+      return zone;
+    }
+
+    var zones = [];
+    var id = 0;
+    for (var j = 0; j < maze.height; j++) {
+      var ligne = maze.cellules[j];
+      // console.log('ligne: ' + JSON.stringify(ligne));
+      for (var i = 0; i < maze.width; i++) {
+        var cellule = ligne[i];
+        zones[id] = initZone();
+        cellule.zone = zone;
+        id++;
+      }
+    }
+    maze.zones = zones;
+  }
+
+  this._initWalls = function(maze) {
+    var walls = [];
+    var id = 0;
+    // On ne traite pas les murs extérieurs, on fera un trou de chaque côté plus tard
+    for (var j = 0; j < maze.height; j++) {
+      // console.log('ligne: ' + JSON.stringify(ligne));
+      for (var i = 0; i < maze.width; i++) {
+        if (j < (maze.height - 1)) {
+          var wallHorizontal = {
+            id: id,
+            type: "h",
+            celluleTop: maze.cellules[j][i],
+            celluleBottom: maze.cellules[j + 1][i],
+          }
+          walls[id] = wallHorizontal;
+          id++;
+        }
+        
+        if ( i < (maze.width - 1)) {
+          var wallVertical = {
+            id: id,
+            type: "v",
+            celluleLeft: maze.cellules[j][i],
+            celluleRight: maze.cellules[j][i + 1],
+          }
+          walls[id] = wallVertical;
+          id++;
+        }
+      }
+    }
+    maze.walls = walls;
+  }
+
+  this.init = function(maze) {
+    this._initZones(maze);
+    this._initWalls(maze);
+    maze.iteration = 0;
+  }
+
+  // Return root zone master of current zone
+  this._getParentZone = function(zone) {
+    // console.log('zoneId: ' + zoneId + ', zone: ' + JSON.stringify(zone));
+    while (zone != zone.parent) {
+      parent = zone.parent;
+      // Path compression
+      zone.parent = parent.parent;
+      zone = zone.parent;
+    }
+    return zone;
+  }
+
+  this._fusionZones = function(zone1, zone2) {
+    if (zone1.size > zone2.size) {
+      zone2.parent = zone1;
+      zone1.size += zone2.size;
+    } else {
+      zone1.parent = zone2;
+      zone2.size += zone1.size;
+    }
+  }
+  
+  this.generate = function(maze, finish) {
+    // Au départ:
+    // * Chaque zone contient 1 cellule 
+    // ==> On a donc autant de zones que de cellules
+    // * Toutes les cellules ont 4 murs
+    // ==> On a donc:
+    //    (maze.width + 1) murs verticaux
+    //    (maze.height + 1) murs horizontaux
+    
+    var zones = maze.zones;
+    // console.log('zones: ' + JSON.stringify(zones));
+    var walls = maze.walls;
+
+    // Nombre d'itérations: maze.width * maze.height - 1
+    // Ou sinon lorsqu'il ne reste plus qu'une seule zone
+    // for (var i = 0; i < (maze.width * maze.height - 1); i++) {
+    // On peut arrêter si tous les murs cassables sont traités (tous ne sont pas forcément cassables, si les zones sont les mêmes)
+    // if (walls.length > 0) {
+    // Mais le labyrinthe est fini si on a fusionné toutes les zones en une seule donc si on a traité toutes les cellules
+    if (maze.iteration < (maze.width * maze.height - 1)) {
+      var wallIdToBreak = Math.floor(Math.random() * walls.length);
+      // console.log('remaing walls: ' + walls.length + ', wallIdToBreak: ' + walls[wallIdToBreak].id);
+      var wallToBreak = walls[wallIdToBreak];
+      // var startTimeSetZoneId;
+      // var endTimeSetZoneId;
+      // var endTimeConcat;
+      if (wallToBreak.type == "h") {
+        // Si cellules de chaque côté du mur appartiennent à la même zone,
+        // on ne casse pas le mur mais on le supprime de la liste des murs à traiter
+        var zoneTop = this._getParentZone(wallToBreak.celluleTop.zone);
+        var zoneBottom = this._getParentZone(wallToBreak.celluleBottom.zone);
+        // Si les zones sont les mêmes, on supprime le mur de la liste des murs à casser
+        if (zoneTop != zoneBottom) {
+          // On fusionne les 2 zones
+          this._fusionZones(zoneTop, zoneBottom);
+
+          // On casse le mur du bas (0x8) de la cellule du haut...
+          wallToBreak.celluleTop.value = wallToBreak.celluleTop.value & 0x7;
+          // ... et le mur du haut (0x2) de la cellule du bas...
+          wallToBreak.celluleBottom.value = wallToBreak.celluleBottom.value & 0xD;
+          // console.log('top: ' + zoneTop.id + ', bottom: ' + zoneBottom.id + ', top length: ' + zoneTop.cellules.length + ', bottom length: ' + zoneBottom.cellules.length + ', set id duration:' + (endTimeSetZoneId - startTimeSetZoneId) + 'ms, concat duration: ' + ( endTimeConcat - endTimeSetZoneId) + 'ms');
+          maze.iteration++;
+        }
+      }
+
+      if (wallToBreak.type == "v") {
+        // On ne casse pas le mur mais on l'enlève de la liste des murs à casser
+        var zoneLeft = this._getParentZone(wallToBreak.celluleLeft.zone);
+        var zoneRight = this._getParentZone(wallToBreak.celluleRight.zone);
+        // Si les zones sont les mêmes, on supprime le mur de la liste des murs à casser
+        if (zoneLeft != zoneRight) {
+          // On fusionne les 2 zones
+          this._fusionZones(zoneLeft, zoneRight);
+
+          // On casse le mur de droite (0x1) de la cellule de gauche...
+          wallToBreak.celluleLeft.value = wallToBreak.celluleLeft.value & 0xE;
+          // ... et le mur de gauche (0x4) de la cellule du droite...
+          wallToBreak.celluleRight.value = wallToBreak.celluleRight.value & 0xB;
+          // console.log('left: ' + zoneLeft.id + ', right: ' + zoneRight.id + ', left length: ' + zoneLeft.cellules.length + ', right length: ' + zoneRight.cellules.length + ', set id duration:' + (endTimeSetZoneId - startTimeSetZoneId) + 'ms, concat duration: ' + ( endTimeConcat - endTimeSetZoneId) + 'ms');
+          maze.iteration++;
+        }
+      }
+      // On supprime le mur de la liste des murs
+      walls.splice(walls.indexOf(wallToBreak), 1);
+      // console.log('maze.iteration: ' + maze.iteration + ', walls.length: ' + walls.length);
+    } else {
+      console.log('randomWayFusion finished');
+      finish();
+    }
+  }
+});
+
+  </script>
+</body>
+</html>

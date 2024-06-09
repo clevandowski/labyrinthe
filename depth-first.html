@@ -163,7 +163,7 @@ app.service('mazeGenerator', function() {
       maze.currentCellule = maze.cellulesWithBreakableWall.pop();
       // Si on n'a plus aucune cellule qui a une cellule non traitée autour d'elle, c'est fini
       if (maze.currentCellule == null) {
-        console.log('mazeGenerator finished');
+        console.log('Maze generation finished');
         finish();
         return;
       }

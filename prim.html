@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<link rel="stylesheet" href="css/styles.css">
+<script src="scripts/angular.js"></script>
+<script src="scripts/maze-common.js"></script>
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+<div ng-app="myApp" ng-controller="myCtrl">
+
+  <span ng-show="maze.initializing">Initialization in progress...</span>
+
+  <div style="display: inline-block; position: relative;">
+    <h2>
+      <a href="https://en.wikipedia.org/wiki/Maze_generation_algorithm#Iterative_randomized_Prim's_algorithm_(without_stack,_without_sets)">Prim's algorithm</a>
+    </h2>
+    <span>
+      <label for="mazeWidth">Width</label>
+      <input type="text" id="mazeWidth" name="mazeWidth" ng-model="maze.width" required/>|
+      <label for="mazeHeight">Height</label>
+      <input type="text" id="mazeHeight" name="mazeHeight" ng-model="maze.height" required/>
+    </span>
+    <div>
+      <button ng-click="listener.generate(maze)">Generate</button>
+      <button ng-click="listener.generateQuick(maze)">Quick Generate</button>
+    </div>
+    <h3>
+      <span>| Iteration {{maze.iteration}} |</span>
+      <button ng-show="maze.generated" ng-click="listener.resolveMaze(null, null, maze)">Resolve</button>
+      <button ng-show="maze.generated" ng-click="listener.resolveQuickMaze(null, null, maze)">Quick Resolve</button>
+      <br/>
+      <span ng-show="maze.generated">| Generation duration: {{maze.generationDuration}}ms |</span>
+      <span ng-show="maze.generated"> Steps: {{maze.resolutionStep}} | Resolution duration: {{maze.resolutionDuration}}ms |</span>
+      <span ng-show="maze.generating">Generating...</span>
+      <span ng-show="maze.resolving">Resolving...</span>
+    </h3>
+    <div class="bordure" style="width: {{ maze.width * maze.cssSize }}px; height: {{ maze.height * maze.cssSize }}px;">
+      <div 
+        ng-repeat="ligne in maze.cellules"
+        class="line">
+        <div 
+          ng-repeat="cellule in ligne"
+          ng-class="maze.getCssClass(cellule)"
+          ng-click="listener.setStartOrEnd(cellule, maze)"
+          style="width: {{ maze.cssWidth }}px; height: {{ maze.cssHeight }}px; border-width: {{ maze.cssBorderWidth }}px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  
+// var app = angular.module('myApp', []);
+
+// Mur de droite: 0x1
+// Mur du haut: 0x2
+// Mur de gauche: 0x4
+// Mur du bas: 0x8
+
+//  _
+// |_| = 0xF = 0b1111
+//
+
+// https://fr.wikipedia.org/wiki/Mod%C3%A9lisation_math%C3%A9matique_de_labyrinthe#Fusion_al%C3%A9atoire_de_chemins
+app.service('mazeGenerator', function() {
+  this._initWalls = function(maze) {
+    var walls = [];
+    var id = 0;
+    // On ne traite pas les murs extérieurs, on fera un trou de chaque côté plus tard
+    for (var j = 0; j < maze.height; j++) {
+      // console.log('ligne: ' + JSON.stringify(ligne));
+      for (var i = 0; i < maze.width; i++) {
+        maze.cellules[j][i].processed = false;
+        if (j == 0) {
+          maze.cellules[j][i].wallTop = null;
+        }
+        if (j < (maze.height - 1)) {
+          var wallHorizontal = {
+            type: "h",
+            celluleTop: maze.cellules[j][i],
+            celluleBottom: maze.cellules[j + 1][i],
+          }
+          walls[id] = wallHorizontal;
+          maze.cellules[j][i].wallBottom = wallHorizontal;
+          maze.cellules[j + 1][i].wallTop = wallHorizontal;
+          id++;
+        } else {
+          maze.cellules[j][i].wallBottom = null;
+        }
+        
+        if (i == 0) {
+          maze.cellules[j][i].wallLeft = null;
+        }
+        if ( i < (maze.width - 1)) {
+          var wallVertical = {
+            type: "v",
+            celluleLeft: maze.cellules[j][i],
+            celluleRight: maze.cellules[j][i + 1],
+          }
+          walls[id] = wallVertical;
+          maze.cellules[j][i].wallRight = wallVertical;
+          maze.cellules[j][i + 1].wallLeft = wallVertical;
+          id++;
+        } else {
+          maze.cellules[j][i].wallRight = null;
+        }
+      }
+    }
+    maze.walls = walls;
+  }
+
+  this._getExplorableWallsAroundCellule = function(cellule) {
+    var explorableWalls = [];
+    if (cellule.wallTop != null && cellule.wallTop.celluleTop.processed == false) {
+      explorableWalls.push(cellule.wallTop);
+    }
+    if (cellule.wallRight != null && cellule.wallRight.celluleRight.processed == false) {
+      explorableWalls.push(cellule.wallRight);
+    }
+    if (cellule.wallBottom != null && cellule.wallBottom.celluleBottom.processed == false) {
+      explorableWalls.push(cellule.wallBottom);
+    }
+    if (cellule.wallLeft != null && cellule.wallLeft.celluleLeft.processed == false) {
+      explorableWalls.push(cellule.wallLeft);
+    }
+    return explorableWalls;
+  }
+
+  this._addExplorableWallsAroundCellule = function(wallsToExplore, cellule) {
+    var explorableWalls = this._getExplorableWallsAroundCellule(cellule);
+    for (var i = 0; i < explorableWalls.length; i++) {
+      wallsToExplore.push(explorableWalls[i]);
+    }
+    cellule.processed = true;
+  }
+
+  this.init = function(maze) {
+    this._initWalls(maze);
+    maze.iteration = 0;
+    var firstCelluleX = Math.floor(Math.random() * maze.width);
+    var firstCelluleY = Math.floor(Math.random() * maze.height);
+    maze.wallsToExplore = [];
+    var firstCellule = maze.cellules[firstCelluleY][firstCelluleX];
+    this._addExplorableWallsAroundCellule(maze.wallsToExplore, firstCellule);
+  }
+  
+  this.generate = function(maze, finish) {
+    // var walls = maze.walls;
+    var wallsToExplore = maze.wallsToExplore;
+    
+    // S'il reste des murs à explorer
+    if (wallsToExplore.length > 0) {
+      // On prend un mur au hasard dans la liste des murs à explorer
+      var wallIdToBreak = Math.floor(Math.random() * wallsToExplore.length);
+      var wallToBreak = wallsToExplore[wallIdToBreak];
+      // console.log('wallToBreak.type: ' + wallToBreak.type);
+      // On supprime le mur de la liste des murs
+      wallsToExplore.splice(wallsToExplore.indexOf(wallToBreak), 1);
+
+      // Si le mur est horizontal
+      if (wallToBreak.type == "h") {
+        // console.log('wallToBreak.celluleTop.x: ' + wallToBreak.celluleTop.x + ', wallToBreak.celluleTop.y: ' + wallToBreak.celluleTop.y);
+        // Si la cellule du haut ou la cellule du bas n'a pas été traitée
+        // Note: si les 2 cellules ont été traitées, on ne casse pas le mur
+        //       sinon seule une des 2 cellules n'a pas été traitée
+        if (wallToBreak.celluleTop.processed == false
+          || wallToBreak.celluleBottom.processed == false) {
+          // On casse le mur du bas (0x8) de la cellule du haut...
+          wallToBreak.celluleTop.value = wallToBreak.celluleTop.value & 0x7;
+          // ... et le mur du haut (0x2) de la cellule du bas...
+          wallToBreak.celluleBottom.value = wallToBreak.celluleBottom.value & 0xD;
+          if (wallToBreak.celluleTop.processed == false) {
+            this._addExplorableWallsAroundCellule(wallsToExplore, wallToBreak.celluleTop);
+          } else {
+            this._addExplorableWallsAroundCellule(wallsToExplore, wallToBreak.celluleBottom);
+          }
+        }
+      } else {
+        // console.log('wallToBreak.celluleLeft.x: ' + wallToBreak.celluleLeft.x + ', wallToBreak.celluleLeft.y: ' + wallToBreak.celluleLeft.y);
+        // Sinon si le mur est vertical
+        // Si la cellule du gauche ou la cellule de droite n'a pas été traitée
+        // Note: si les 2 cellules ont été traitées, on ne casse pas le mur
+        //       sinon seule une des 2 cellules n'a pas été traitée
+        if (wallToBreak.celluleLeft.processed == false
+          || wallToBreak.celluleRight.processed == false) {
+          // On casse le mur de droite (0x1) de la cellule de gauche...
+          wallToBreak.celluleLeft.value = wallToBreak.celluleLeft.value & 0xE;
+          // ... et le mur de gauche (0x4) de la cellule du droite...
+          wallToBreak.celluleRight.value = wallToBreak.celluleRight.value & 0xB;
+          if (wallToBreak.celluleLeft.processed == false) {
+            this._addExplorableWallsAroundCellule(wallsToExplore, wallToBreak.celluleLeft);
+          } else {
+            this._addExplorableWallsAroundCellule(wallsToExplore, wallToBreak.celluleRight);
+          }
+        }
+      }
+      maze.iteration++;
+
+      // console.log('maze.iteration: ' + maze.iteration + ', walls.length: ' + walls.length);
+    } else {
+      console.log('Maze generation finished');
+      finish();
+    }
+  }
+});
+
+  </script>
+</body>
+</html>

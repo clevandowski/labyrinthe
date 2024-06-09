@@ -99,7 +99,6 @@ app.service('mazeGenerator', function() {
       for (var i = 0; i < maze.width; i++) {
         if (j < (maze.height - 1)) {
           var wallHorizontal = {
-            id: id,
             type: "h",
             celluleTop: maze.cellules[j][i],
             celluleBottom: maze.cellules[j + 1][i],
@@ -110,7 +109,6 @@ app.service('mazeGenerator', function() {
         
         if ( i < (maze.width - 1)) {
           var wallVertical = {
-            id: id,
             type: "v",
             celluleLeft: maze.cellules[j][i],
             celluleRight: maze.cellules[j][i + 1],
@@ -217,7 +215,7 @@ app.service('mazeGenerator', function() {
       walls.splice(walls.indexOf(wallToBreak), 1);
       // console.log('maze.iteration: ' + maze.iteration + ', walls.length: ' + walls.length);
     } else {
-      console.log('randomWayFusion finished');
+      console.log('Maze generation finished');
       finish();
     }
   }

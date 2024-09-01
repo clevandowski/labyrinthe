@@ -11,7 +11,6 @@ var Maze = function(windowsWidth, windowsHeight) {
   this.cssWidth = 0;
   this.cssHeight = 0;
 
-
   this.init = function() {
     var startTime = Date.now();
     this.initializing = true;
